@@ -76,10 +76,6 @@ UV_VERSION :=
 # VARIABLES
 ########################################################################################
 
-# Use Bash and its facilities
-.ONESHELL:
-SHELL := /bin/bash
-
 # Extract Python version from pyproject.toml and create .python-version
 # This file is needed by uv and pip for building the bundle
 # We also include it into the .tar.gz bundle.
@@ -215,19 +211,19 @@ update_deps:
 # Run Application
 run:
 	uv run src/url_checker_tools.py \
-	  $$target_url;
+	  ${target_url};
 
 run_robot:
 	uv run src/url_checker_tools.py \
-	  $$target_url \
 	  --providers urlhaus,virustotal,yara \
-	  --format synthesis;
+	  --format synthesis \
+	  ${target_url};
 
 malrun_robot:
 	uv run src/url_checker_tools.py \
-	  "https://malware.wicar.org" \
 	  --providers virustotal \
-	  --format synthesis;
+	  --format synthesis \
+	  "https://malware.wicar.org";
 ########################################################################################
 
 # Build 🌍 , Publish  🌬️ and Release 🔥
