@@ -159,7 +159,7 @@ class KeyManager:
 
     def _get_key(self, account: str, required: bool = True) -> str:
         """Get an API key from the keyring."""
-        env_var_name = f"URLCHECKER_{account.upper()}"
+        env_var_name = f"URLCHECKERTOOLS_{account.upper()}"
         if os.environ.get(env_var_name):
             # Environment variable is set, skip keyring
             key = os.environ.get(env_var_name)
