@@ -1,4 +1,5 @@
-# URLChecker-Tools
+# URLChecker-Tools <img src="contrib/logo.png" width="100" alt="URLChecker-Tools logo" />
+
 URLChecker-Tools is a collection of tools that will be leveraged by the URLChecker Public Service:
 
 url-checker-tools is a Python CLI security analysis toolkit that performs comprehensive URL threat assessment through
@@ -9,7 +10,6 @@ providing actionable insights about URL safety. Designed as the backend engine f
 structured JSON output compatible with automated workflows. Built for integration with the url-checker web platform,
 it serves as the heavy-lifting component for asynchronous security assessments. But the Command Line Interface also
 enables standalone usage for security researchers, incident response teams and personal usage.
-
 
 ## Getting started
 
