@@ -95,40 +95,21 @@ class MISPProvider(BaseProvider):
 
         return list(set(terms))  # Remove duplicates
 
-    def _search_misp(self, term: str) -> List[Dict[str, Any]]:
-        """Search MISP for a specific term using PyMISP."""
+    def _search_misp(self, term: str) -> List[Any]:
+        """Search MISP for a specific term using PyMISP, returning MISPEvent objects."""
         self._initialize_misp_client()
 
         try:
-            # Search parameters based on original implementation
-            search_params = {
-                "value": term,
-                "type_attribute": ["url", "domain", "hostname"],
-                "limit": 50,
-                "page": 1,
-            }
+            search_results = self._misp_client.search(
+                value=term,
+                type_attribute=["url", "domain", "hostname"],
+                limit=50,
+                page=1,
+                pythonify=True,
+            )
 
-            # Perform the search
-            search_results = self._misp_client.search(**search_params)
-
-            # Handle both single event and list responses
-            if isinstance(search_results, dict) and "Event" in search_results:
-                return [search_results["Event"]]
-            elif isinstance(search_results, list):
-                events = []
-                for item in search_results:
-                    if isinstance(item, dict) and "Event" in item:
-                        events.append(item["Event"])
-                return events
-            elif hasattr(search_results, "get") and search_results.get("response"):
-                # Handle paginated response format
-                response_data = search_results["response"]
-                if isinstance(response_data, list):
-                    events = []
-                    for item in response_data:
-                        if isinstance(item, dict) and "Event" in item:
-                            events.append(item["Event"])
-                    return events
+            if isinstance(search_results, list):
+                return search_results
 
             return []
 
@@ -136,45 +117,40 @@ class MISPProvider(BaseProvider):
             raise Exception(f"MISP search failed: {e}")
 
     def _analyze_misp_events(
-        self, target: str, events: List[Dict], search_terms: List[str]
+        self, target: str, events: List[Any], search_terms: List[str]
     ) -> ProviderResult:
-        """Analyze MISP events to determine threat level."""
+        """Analyze MISP events (MISPEvent objects) to determine threat level."""
         if not events:
             return self._create_safe_result(target, {}, confidence=0.7)
 
-        # Analyze event characteristics
         threat_levels = []
         categories = set()
         recent_events = 0
         total_events = len(events)
 
-        # Recent threshold (last 30 days)
         recent_threshold = datetime.now() - timedelta(days=30)
 
         for event in events:
-            event_data = event.get("Event", event)
-
-            # Check if event is recent
+            # Use getattr for MISPEvent objects (pythonify=True)
             try:
-                event_date = datetime.strptime(event_data.get("date", ""), "%Y-%m-%d")
-                if event_date > recent_threshold:
-                    recent_events += 1
+                event_date_str = getattr(event, "date", None)
+                if event_date_str:
+                    event_date = datetime.strptime(str(event_date_str), "%Y-%m-%d")
+                    if event_date > recent_threshold:
+                        recent_events += 1
             except (ValueError, TypeError):
                 pass
 
-            # Collect threat information
-            threat_level = event_data.get("threat_level_id", "4")  # Default to low
-            categories.add(event_data.get("info", "Unknown"))
+            threat_level_id = str(getattr(event, "threat_level_id", "4"))
+            categories.add(getattr(event, "info", "Unknown"))
 
-            # Convert MISP threat level to our scale
-            if threat_level in ["1", "2"]:  # High/Medium
+            if threat_level_id in ("1", "2"):
                 threat_levels.append("high")
-            elif threat_level == "3":  # Low
+            elif threat_level_id == "3":
                 threat_levels.append("medium")
             else:
                 threat_levels.append("low")
 
-        # Determine overall threat level
         if recent_events >= 3 or "high" in threat_levels[:3]:
             threat_level = ThreatLevel.MALICIOUS
             is_threat = True
@@ -192,7 +168,6 @@ class MISPProvider(BaseProvider):
             is_threat = False
             confidence = 0.7
 
-        # Build details
         details = {
             "events_found": total_events,
             "recent_events": recent_events,
@@ -202,15 +177,12 @@ class MISPProvider(BaseProvider):
             "misp_instance": self.config.url,
             "sample_events": [
                 {
-                    "info": event.get("Event", event).get("info", "Unknown"),
-                    "date": event.get("Event", event).get("date", "Unknown"),
-                    "threat_level": event.get("Event", event).get(
-                        "threat_level_id", "4"
-                    ),
+                    "info": getattr(e, "info", "Unknown"),
+                    "date": str(getattr(e, "date", "Unknown")),
+                    "threat_level": str(getattr(e, "threat_level_id", "4")),
                 }
-                for event in events[:5]  # Include up to 5 sample events
+                for e in events[:5]
             ],
-            "raw_response": events[:10],  # Include up to 10 full events
         }
 
         if is_threat:
