@@ -4,7 +4,7 @@ This directory contains convenient testing scripts using industry-standard test 
 
 ## Available Scripts
 
-### `run_sus.sh` - EICAR Test Virus
+### `run_eicar.sh` - EICAR Test Virus
 Tests the system with the EICAR test virus from WICAR (Web EICAR):
 ```bash
 ./run_eicar.sh
