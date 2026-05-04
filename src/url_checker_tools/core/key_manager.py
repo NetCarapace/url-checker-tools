@@ -14,19 +14,19 @@ class KeyManager:
 
     def get_virustotal_key(self) -> str:
         """Get VirusTotal API key from keyring."""
-        return self._get_key("virustotal", required=True)
+        return self._get_key("virustotal_apikey", required=True)
 
     def get_urlscan_key(self) -> str:
         """Get URLScan.io API key from keyring."""
-        return self._get_key("urlscan", required=True)
+        return self._get_key("urlscan_apikey", required=True)
 
     def get_google_sb_key(self) -> str:
         """Get Google Safe Browsing API key from keyring."""
-        return self._get_key("googlesafebrowsing", required=True)
+        return self._get_key("googlesafebrowsing_apikey", required=True)
 
     def get_abuseipdb_key(self) -> str:
         """Get AbuseIPDB API key from keyring."""
-        return self._get_key("abuseipdb", required=True)
+        return self._get_key("abuseipdb_apikey", required=True)
 
     def get_whalebone_key(self) -> str:
         """Get Whalebone API secret-key (actual api key) from keyring."""
@@ -39,7 +39,7 @@ class KeyManager:
     def has_virustotal_key(self) -> bool:
         """Check if VirusTotal API key exists."""
         try:
-            self._get_key("virustotal", required=True)
+            self._get_key("virustotal_apikey", required=True)
             return True
         except MissingAPIKeyError:
             return False
@@ -47,7 +47,7 @@ class KeyManager:
     def has_urlscan_key(self) -> bool:
         """Check if URLScan.io API key exists."""
         try:
-            self._get_key("urlscan", required=True)
+            self._get_key("urlscan_apikey", required=True)
             return True
         except MissingAPIKeyError:
             return False
@@ -55,7 +55,7 @@ class KeyManager:
     def has_google_sb_key(self) -> bool:
         """Check if Google Safe Browsing API key exists."""
         try:
-            self._get_key("googlesafebrowsing", required=True)
+            self._get_key("googlesafebrowsing_apikey", required=True)
             return True
         except MissingAPIKeyError:
             return False
@@ -63,7 +63,7 @@ class KeyManager:
     def has_abuseipdb_key(self) -> bool:
         """Check if AbuseIPDB API key exists."""
         try:
-            self._get_key("abuseipdb", required=True)
+            self._get_key("abuseipdb_apikey", required=True)
             return True
         except MissingAPIKeyError:
             return False
@@ -159,11 +159,13 @@ class KeyManager:
 
     def _get_key(self, account: str, required: bool = True) -> str:
         """Get an API key from the keyring."""
-        env_var_name = f"URLCHECKERTOOLS_{account.upper()}"
+        NAME = {account.upper()}
+        env_var_name = f"URLCHECKERTOOLS_{NAME}"
         if os.environ.get(env_var_name):
             # Environment variable is set, skip keyring
             key = os.environ.get(env_var_name)
         else:
+            # TODO In case no keyring usable, we should raise something
             key = keyring.get_password("urlchecker", account)
 
         if key and key.strip():
