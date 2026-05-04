@@ -76,16 +76,19 @@ UV_VERSION :=
 # VARIABLES
 ########################################################################################
 
+# Use Bash and its facilities
+SHELL := /bin/bash
+
 # Extract Python version from pyproject.toml and create .python-version
 # This file is needed by uv and pip for building the bundle
 # We also include it into the .tar.gz bundle.
 $(shell \
   if [ ! -f .python-version ]; then \
-    python3 -c "import tomllib; \
-      data = tomllib.load(open('pyproject.toml', 'rb')); \
-      req = data['project']['requires-python']; \
-      version = req.replace('>=', '').split('.')[0:2]; \
-      print('.'.join(version))" > .python-version 2>/dev/null; \ # || echo "3.13" > .python-version; \
+python3 -c "import tomllib; \
+data = tomllib.load(open('pyproject.toml', 'rb')); \
+req = data['project']['requires-python']; \
+version = req.replace('>=', '').split('.')[0:2]; \
+print('.'.join(version))" > .python-version 2>/dev/null || echo "3.13" > .python-version; \
   fi \
 )
 
@@ -128,7 +131,7 @@ $(foreach file,$(envfiles),$(eval export $(shell sed 's/=.*//' $(file))))
 PACKAGE_VERSION = $(shell cat VERSION)
 PACKAGE_PYTHON = $(shell cat .python-version)
 PACKAGE_SUFFIX = deployment-bundle.tar.gz
-PACKAGE_FULLNAME = ${PACKAGE_DEBIANNAME}_v${PACKAGE_VERSION}_Python${PACKAGE_PYTHON}-${PACKAGE_SUFFIX}
+PACKAGE_FULLNAME = ${PACKAGENAME}_v${PACKAGE_VERSION}_Python${PACKAGE_PYTHON}-${PACKAGE_SUFFIX}
 
 # Houskeeping forcing variables
 # We reserve normally automation for CI/CD - Experimental in this repo
@@ -169,33 +172,33 @@ configure_repo_dev: install-dev
 		echo "Reply Y if and only if the pip3 list output above is consistent and does not display system packages !"; \
 		echo "Ctrl+C to escape ..."; \
 		read -p "Do you want to install other specific dependencies from specific requirement files with pip ? (Y/N) " go_to_install; \
-		go_to_install="$${go_to_install:-N}"; \
-	if [ $$go_to_install = "Y" ] || [ $$go_to_install = "y" ]; then \
-		uv run pip3 install -r requirements-dev.txt -e .; \
-	else
-		echo "Tweak requirements-dev.txt skipped"; \
-	fi \
-	fi
-
+		if [ $$go_to_install = "Y" ] || [ $$go_to_install = "y" ]; then \
+			uv run pip3 install -r requirements-dev.txt -e .; \
+		else \
+			echo "Tweak requirements-dev.txt skipped"; \
+		fi; \
+	fi;
 	uv run pre-commit install; \
 	uv run pre-commit autoupdate; \
 	echo "Initial pre-commit run"; \
 	uv run pre-commit run --all-files; \
 	echo "Virtual environment created, local repo configured with pre-commit hooks."; \
+	cd /tmp; \
+	# git clone TODO ADD Github stuff
 
 # Development lifecycle #
 ########################################################################################
 # Dependencies
 # -dev suffixes means we specifically manage dependencies present only in Dev Environment
 install_deps:
+	uv pip install pip
 	uv venv --seed
 	uv sync --locked
 
-
 install-dev:
+	uv pip install pip
 	uv venv --seed
 	uv sync --dev --locked
-	uv pip install pip
 
 add_newdep:
 	uv add $(new_package)
@@ -206,6 +209,10 @@ add_newdep-dev:
 update_deps:
 	uv lock --upgrade
 	uv sync --locked
+
+update_deps-dev:
+	uv lock --upgrade
+	uv sync --dev --locked
 ########################################################################################
 
 # Run Application
@@ -223,40 +230,43 @@ malrun_robot:
 	uv run src/url_checker_tools.py \
 	  --providers virustotal \
 	  --format synthesis \
+	  --verbose \
 	  "https://malware.wicar.org";
 ########################################################################################
 
 # Build 🌍 , Publish  🌬️ and Release 🔥
 build: update_deps clean
-	# Export uv.lock to requirements-build.txt for downloading
-	echo "Create requirements-build.txt";
+	set -e; \
+	trap '$(MAKE) configure_repo_dev' EXIT \
+	# Export uv.lock to requirements-build.txt for downloading \
+	echo "Create requirements-build.txt"; \
 	uv export \
 	  --format requirements.txt \
 	  --no-hashes \
 	  --frozen \
 	  --no-editable \
-	  --no-emit-project > requirements-build.txt;
-	# Export all wheel
-	echo "Download wheel";
-	mkdir -p offline-wheels;
-	# Download ONLY the locked dependencies for this project
+	  --no-emit-project > requirements-build.txt; \
+	# Export all wheel \
+	echo "Download wheel"; \
+	mkdir -p offline-wheels; \
+	# Download ONLY the locked dependencies for this project \
 	uv run pip download \
 	  -r requirements-build.txt \
 	  --dest offline-wheels/ \
-      --prefer-binary
-	# Add build package tools
-	# python3 -m pip download setuptools wheel pip --dest offline-wheels/
+      --prefer-binary \
+	# Add build package tools \
+	# python3 -m pip download setuptools wheel pip --dest offline-wheels/ \
 	python3 -m pip download \
 	  setuptools \
 	  --dest offline-wheels \
-	  --prefer-binary
-	# Bundle everything
-	echo "Bundle it";
+	  --prefer-binary \
+	# Bundle everything \
+	echo "Bundle it in ${PACKAGE_FULLNAME}"; \
 	tar czf ${PACKAGE_FULLNAME} \
-	  --transform='s|^src/urlchecker|urlchecker|' \
-	  --transform='s|^src/url_checker_tools.py|url_checker_tools.py|' \
-      src/urlchecker \
-	  src/url_checker_tools.py \
+	  --transform='s|^src/$(PACKAGENAME)|$(PACKAGENAME)|' \
+	  --transform='s|^src/$(PACKAGENAME).py|$(PACKAGENAME).py|' \
+      src/$(PACKAGENAME) \
+	  src/$(PACKAGENAME).py \
 	  doc \
 	  Makefile \
 	  .env.template \

@@ -35,7 +35,7 @@ repos:
 
 # The standard Black formatter
   - repo: https://github.com/psf/black
-    rev: 26.1.0
+    rev: 26.3.1
     hooks:
       - id: black
         language_version: python3.13
@@ -44,7 +44,7 @@ repos:
 
 # Automatically sort and formats Python imports
   - repo: https://github.com/pycqa/isort
-    rev: 8.0.0
+    rev: 9.0.0a3
     hooks:
       - id: isort
         language_version: python3.13
@@ -82,7 +82,7 @@ repos:
 ##          entry: poetry run coverage run -m pytest
 
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.10.6
+    rev: 0.11.8
     hooks:
       - id: uv-lock
         language_version: python3.13
