@@ -159,7 +159,10 @@ class KeyManager:
 
     def _get_key(self, account: str, required: bool = True) -> str:
         """Get an API key from the keyring."""
-        NAME = {account.upper()}
+        # TODO There is a weird behavior: when we select only one provider on command line,
+        # I observed that for all the providers enumerated, the key is searched with this single provider
+        # account name ... it might lead to weird behavior ...
+        NAME = account.upper()
         env_var_name = f"URLCHECKERTOOLS_{NAME}"
         if os.environ.get(env_var_name):
             # Environment variable is set, skip keyring
