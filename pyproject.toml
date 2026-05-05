@@ -1,7 +1,7 @@
 # https://github.com/pypa/setuptools/blob/main/docs/userguide/quickstart.rst
 [project]
 name = "url-checker-tools"
-version = "0.2.0"
+version = "1.0.0"
 description = "URL Checker Tools is a collection of tools that will be leveraged by the URL Checker Public Service"
 authors = [
     {name = "Sam Kafai El-Khorassani", email = "sam.kafai@gmail.com"},
@@ -78,7 +78,7 @@ exclude = ["ansible*", "tests*"]
 "hello" = ["*.msg"]
 
 [tool.bumpversion]
-version = "0.2.0"
+version = "1.0.0"
 commit = true
 tag = true
 
