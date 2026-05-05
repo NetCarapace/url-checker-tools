@@ -333,7 +333,7 @@ else
 
 	@echo "📝 Bumping repo to version ${version_repo}"
 	echo ${version_repo} > VERSION
-	sed -i "s/.*__version__.*/__version__ = \"${version_repo}\"/" "src/url_checker/__init__.py"
+	sed -i "s/.*__version__.*/__version__ = \"${version_repo}\"/" "src/url_checker_tools/__init__.py"
 	sed -i "s/.*version =.*/version = \"${version_repo}\"/" "pyproject.toml"
 
 	@echo "🔒 Updating uv.lock..."
@@ -341,7 +341,7 @@ else
 
 	@echo "📦 Staging changes..."
 	git add VERSION
-	git add "src/url_checker/__init__.py"
+	git add "src/url_checker_tools/__init__.py"
 	git add "pyproject.toml"
 	git add uv.lock
 
