@@ -3,6 +3,10 @@ This file documents important upgrading steps to deploy a new version of URLChec
 for the DevOps.
 Documentation is obviously incremental.
 
+## 1.0.0
+
+No upgrade notes.
+
 ## 0.2.0
 
 This is the pre-release. No upgrade notes.

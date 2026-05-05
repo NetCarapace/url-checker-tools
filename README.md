@@ -105,6 +105,11 @@ the file ```CONTRIBUTORS.md```.
 
 URLChecker-tools is co-funded by [Restena](https://www.restena.lu/) and by the European Union under [NGSOTI](https://restena.lu/fr/project/ngsoti) (Next Generation Security Operator Training Infrastructure) project.
 
-![EU logo](https://www.vulnerability-lookup.org/images/eu-funded.jpg)
-![NGSOTI logo](https://restena.lu/files/styles/large/public/inline-images/ngsoti-logo-verti-col.png)
-![Restena logo](https://restena.lu/sites/restena.lu/themes/site_theme/images/logo.svg)
+<p align="center">
+<img src="https://www.vulnerability-lookup.org/images/eu-funded.jpg" alt="EU logo" width="150" />
+<br />
+<img src="https://restena.lu/files/styles/large/public/inline-images/ngsoti-logo-verti-col.png" alt="NGSOTI logo" width="150" />
+<br />
+<img src="https://restena.lu/sites/restena.lu/themes/site_theme/images/logo.svg" alt="Restena logo" width="150" />
+<br />
+</p>
