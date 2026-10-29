@@ -440,10 +440,10 @@ Examples:
                     provider_class = self.registry.get(provider_name)
                     if provider_class:
                         try:
-                            provider = provider_class()
-                            if provider.is_available():
-                                active_providers.append(provider_name)
-                        except:
+                            with provider_class() as provider:
+                                if provider.is_available():
+                                    active_providers.append(provider_name)
+                        except Exception:
                             pass
                 if active_providers:
                     print(f"[SCAN] Checking: {', '.join(active_providers)}")
