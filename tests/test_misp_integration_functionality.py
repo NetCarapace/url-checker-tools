@@ -570,3 +570,49 @@ def test_misp_keyring_url_replaces_default(monkeypatch):
         misp = ProviderConfigTemplate.get_all_provider_configs()["misp"]
     assert misp["url"] == "https://misp.keyring.test"
     assert misp["api_key"] == "kr-key"
+
+
+def test_misp_event_leaves_out_providers_that_did_not_run():
+    """Unavailable and failed providers are labelled as such and not counted as clean."""
+    target = "https://test.example.com"
+
+    def result(provider, threat_level, details, error=None):
+        return ProviderResult(
+            provider=provider,
+            target=target,
+            is_threat=threat_level == ThreatLevel.MALICIOUS,
+            threat_level=threat_level,
+            confidence=0.9,
+            details=details,
+            error_message=error,
+        )
+
+    results = [
+        result("virustotal", ThreatLevel.MALICIOUS, {"malicious_count": 5, "total_engines": 90}),
+        result("link_analyzer", ThreatLevel.SAFE, {"final_url": target, "redirect_count": 0}),
+        result("google_sb", ThreatLevel.ERROR, {"status": "unavailable"}, "google_sb not available"),
+        result("yara", ThreatLevel.ERROR, {"status": "error"}, "download failed"),
+    ]
+    config = {"misp": {"url": "https://misp.test.com", "api_key": "test_key_123"}}
+
+    with patch("url_checker_tools.config.provider_config.ProviderConfigTemplate.get_all_provider_configs", return_value=config), \
+         patch("url_checker_tools.integrations.misp_reporter.PyMISP") as mock_pymisp_class:
+        client = mock_pymisp_class.return_value
+        client.add_event.return_value = Mock(spec=["id", "uuid"], id=1, uuid="u-1")
+        MISPReporter().create_event(target, results, "session_1")
+
+    texts = {}
+    for call in client.add_object.call_args_list:
+        obj = call.args[1]
+        values = {a.object_relation: a.value for a in obj.attributes}
+        if obj.name == "annotation":
+            texts[values["type"]] = values["text"]
+    tags = [call.args[1] for call in client.tag.call_args_list]
+
+    assert "GOOGLE_SB: Unavailable" in texts["threat-intel"]
+    assert "YARA: Error" in texts["threat-intel"]
+    assert "yara-scan" not in texts
+    assert "Providers flagged: 1/2" in texts["assessment"]
+    assert "Clean providers: 1/2" in texts["assessment"]
+    assert "Providers without result: google_sb, yara" in texts["assessment"]
+    assert "urlchecker:providers=2" in tags

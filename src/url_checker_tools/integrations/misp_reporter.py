@@ -206,6 +206,7 @@ class MISPReporter:
         threat_score: int,
         session_id: str,
         scoring_data: Dict[str, Any],
+        not_run: List[str],
     ):
         """Object 7 — overall assessment (annotation object)."""
 
@@ -222,6 +223,8 @@ class MISPReporter:
             f"Clean providers: {clean_providers}/{total_providers}",
             f"Session ID: {session_id}",
         ]
+        if not_run:
+            lines.append(f"Providers without result: {', '.join(not_run)}")
         if contributing:
             lines.append(f"Score contributors: {contributing}")
 
@@ -252,7 +255,9 @@ class MISPReporter:
             scoring_data = UnifiedThreatScorer().calculate_threat_score(results)
             threat_score = scoring_data["final_score"]
             threat_count = len(threat_results)
-            total_providers = len(results)
+            # Providers that did not run are left out of the counts
+            not_run = [r.provider for r in results if r.is_error]
+            total_providers = len(results) - len(not_run)
             clean_providers = total_providers - threat_count
 
             # ---- Create the event ----------------------------------------
@@ -282,6 +287,11 @@ class MISPReporter:
             for result in results:
                 pname = getattr(result, "provider", "").lower()
                 det = result.details if isinstance(getattr(result, "details", None), dict) else {}
+
+                if result.is_error:
+                    status = "Unavailable" if result.is_unavailable else "Error"
+                    threat_intel_summary.append(f"{result.provider.upper()}: {status}")
+                    continue
 
                 if pname in ("link_analyzer", "dns"):
                     ips = det.get("resolved_ips", [])
@@ -398,7 +408,7 @@ class MISPReporter:
                 event_id,
                 self._build_assessment_object(
                     threat_count, total_providers, clean_providers,
-                    threat_score, session_id, scoring_data,
+                    threat_score, session_id, scoring_data, not_run,
                 ),
                 "assessment annotation",
             )
