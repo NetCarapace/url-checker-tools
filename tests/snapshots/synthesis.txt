@@ -1,0 +1,54 @@
+exit: 0
+--- stdout ---
+Scanning http://example.test/login...
+Running whois...
+{
+  "provider": "whois",
+  "threat_detected": false,
+  "threat_level": "safe",
+  "confidence": 0.9
+}
+Running link_analyzer...
+{
+  "provider": "link_analyzer",
+  "threat_detected": false,
+  "threat_level": "safe",
+  "confidence": 0.9
+}
+Running misp...
+{
+  "provider": "misp",
+  "threat_detected": false,
+  "threat_level": "safe",
+  "confidence": 0.9
+}
+Running virustotal...
+{
+  "provider": "virustotal",
+  "threat_detected": true,
+  "threat_level": "malicious",
+  "confidence": 0.8
+}
+Running google_sb...
+  google_sb is not properly configured
+Running yara...
+{
+  "provider": "yara",
+  "threat_detected": false,
+  "threat_level": "safe",
+  "confidence": 0.9
+}
+Running abuseipdb...
+   abuseipdb scan failed: connection refused
+
+Summary: 5 providers, 1 threats detected
+{
+  "synthesis": {
+    "threat_level": "high",
+    "confidence": 0.8,
+    "providers_checked": 5,
+    "threats_detected": 1
+  }
+}
+
+--- stderr ---
