@@ -116,7 +116,7 @@ ERROR: {"timestamp": "<ts>", "event_type": "error", "session_id": "snap", "provi
       },
       {
         "provider": "google_sb",
-        "status": "clean",
+        "status": "unavailable",
         "threat_detected": false,
         "threat_type": "error",
         "confidence": "0.00",
@@ -142,7 +142,7 @@ ERROR: {"timestamp": "<ts>", "event_type": "error", "session_id": "snap", "provi
       },
       {
         "provider": "abuseipdb",
-        "status": "clean",
+        "status": "error",
         "threat_detected": false,
         "threat_type": "error",
         "confidence": "0.00",
@@ -191,9 +191,9 @@ ERROR: {"timestamp": "<ts>", "event_type": "error", "session_id": "snap", "provi
       "link_analyzer": "Safe | 1 redirect(s)",
       "whalebone": "Clean | Categories: news",
       "virustotal": "Malicious (5/90) | Categories: phishing",
-      "google_sb": "Safe",
+      "google_sb": "Unavailable",
       "yara": "No pattern matches",
-      "abuseipdb": "Low Risk (0 reports)"
+      "abuseipdb": "Error"
     },
     "metadata_analysis": {
       "behavioral_anomalies": [],

@@ -763,7 +763,7 @@ Examples:
             # Status icon
             if is_error:
                 status_icon = "x"
-                status = "error"
+                status = "unavailable" if result.is_unavailable else "error"
             elif is_threat:
                 status_icon = "⚠"
                 status = "threat detected"
@@ -1179,7 +1179,9 @@ Examples:
                 result_entry = {
                     "provider": result.provider,
                     "status": (
-                        "threat" if getattr(result, "is_threat", False) else "clean"
+                        ("unavailable" if result.is_unavailable else "error")
+                        if result.is_error
+                        else "threat" if result.is_threat else "clean"
                     ),
                     "threat_detected": getattr(result, "is_threat", False),
                     "threat_type": self._serialize_enum(
@@ -1229,6 +1231,13 @@ Examples:
             provider = result.provider.lower()
             is_threat = getattr(result, "is_threat", False)
             details = getattr(result, "details", {})
+
+            # Providers that did not run get no verdict and no provider-specific section
+            if result.is_error:
+                providers_summary[provider] = (
+                    "Unavailable" if result.is_unavailable else "Error"
+                )
+                continue
 
             if is_threat:
                 threat_count += 1

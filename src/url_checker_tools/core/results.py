@@ -52,6 +52,11 @@ class ProviderResult:
         return self.threat_level == ThreatLevel.ERROR or self.error_message is not None
 
     @property
+    def is_unavailable(self) -> bool:
+        """Check if the provider did not run because it is not configured."""
+        return self.is_error and self.details.get("status") == "unavailable"
+
+    @property
     def is_actionable_threat(self) -> bool:
         """Check if this represents a threat that requires action."""
         return self.threat_level in [ThreatLevel.MALICIOUS, ThreatLevel.CRITICAL]
