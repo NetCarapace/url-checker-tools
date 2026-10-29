@@ -264,6 +264,34 @@ class OutputService:
                 if threat_level and hasattr(threat_level, "value"):
                     print(f"   └─ Threat Level: {threat_level.value}")
 
+    def misp_reported(self, misp_data: dict) -> None:
+        """Print the outcome of MISP reporting."""
+        status = misp_data["status"]
+        error = misp_data["error"]
+        verbose = self.request.verbose
+
+        if status in ("unavailable", "module_unavailable"):
+            if verbose:
+                print(f"[WARNING] {error}")
+        elif status == "skipped_no_threats":
+            if verbose:
+                print("[INFO] No threats detected - skipping MISP report")
+        elif status == "success":
+            if verbose:
+                print(
+                    f"[INFO] MISP event created: Event ID {misp_data['event_id']} (UUID: {misp_data['uuid']})"
+                )
+            else:
+                print(f"MISP event created: {misp_data['event_id']}")
+        elif status == "failed":
+            if verbose:
+                print(f"[ERROR] {error}")
+        elif status == "error":
+            if verbose:
+                print(f"[ERROR] MISP reporting failed: {error}")
+            else:
+                print(f"MISP reporting error: {error}")
+
     # ---- Scan progress (ScanEvents) ---------------------------------------
 
     def scan_started(self, request: ScanRequest) -> None:

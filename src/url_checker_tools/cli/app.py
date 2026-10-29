@@ -121,6 +121,7 @@ class URLCheckerCLI:
                 misp_data = None
                 if request.misp_report and results:
                     misp_data = MISPReportingService().report(request, results)
+                    self.output.misp_reported(misp_data)
 
                 # Handle output format (now with MISP data available)
                 self.output.render(results, misp_data=misp_data)
