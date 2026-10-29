@@ -22,6 +22,8 @@ from url_checker_tools.services.provider_registry import ProviderRegistry
 
 SNAPSHOT_DIR = Path(__file__).parent / "snapshots"
 TARGET = "http://example.test/login"
+# Keep a single download URL: download links are de-duplicated with set(), so several would print in random order
+TARGETS = {"download_links": "https://example.test/setup.exe"}
 EXTRA = ["--providers", "virustotal,google_sb,yara,abuseipdb"]
 CASES = {
     "human": EXTRA,
@@ -36,6 +38,7 @@ CASES = {
     "list_providers": ["--list-providers"],
     "providers_status": ["--providers-status"],
     "auto_scan_files": EXTRA + ["--auto-scan-files", "--verbose"],
+    "download_links": EXTRA + ["--download", "--auto-scan-files", "--verbose"],
 }
 
 
@@ -68,7 +71,7 @@ def test_cli_output_matches_snapshot(case, tmp_path, monkeypatch, capsys):
     with patch(
         "url_checker_tools.integrations.misp_reporter.MISPReporter", FakeMISPReporter
     ):
-        code = run_cli([TARGET, "--sid", "snap", *CASES[case]])
+        code = run_cli([TARGETS.get(case, TARGET), "--sid", "snap", *CASES[case]])
     out, err = capsys.readouterr()
 
     parts = [f"exit: {code}", "--- stdout ---", out, "--- stderr ---", err]
