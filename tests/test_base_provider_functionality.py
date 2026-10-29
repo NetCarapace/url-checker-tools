@@ -42,7 +42,7 @@ class TestBaseProviderFunctionality:
 
     def test_provider_initialization_default_config(self):
         """Test provider initialization with default configuration."""
-        with patch('urlchecker.config.providers_enum.ProviderConfigTemplate.get_all_provider_configs') as mock_configs:
+        with patch('url_checker_tools.config.provider_config.ProviderConfigTemplate.get_all_provider_configs') as mock_configs:
             mock_configs.return_value = {
                 'test_provider': {
                     'api_key': 'default_key',
@@ -329,7 +329,7 @@ class TestBaseProviderFunctionality:
         assert provider_empty.provider_name == "test_provider"
         assert hasattr(provider_empty, 'config')
 
-    @patch('urlchecker.config.logging_config.get_logger')
+    @patch('url_checker_tools.config.logging_config.get_logger')
     def test_logging_functionality(self, mock_get_logger):
         """Test that logging works correctly."""
         mock_logger = Mock()

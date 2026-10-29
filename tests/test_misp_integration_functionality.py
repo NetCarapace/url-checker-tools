@@ -16,7 +16,7 @@ from url_checker_tools.core.results import ProviderResult, ThreatLevel
 class TestMISPIntegrationFunctionality:
     """Test MISP integration functionality comprehensively."""
 
-    @patch('urlchecker.config.providers_enum.ProviderConfigTemplate.get_all_provider_configs')
+    @patch('url_checker_tools.config.provider_config.ProviderConfigTemplate.get_all_provider_configs')
     def test_misp_reporter_initialization_verbose_mode(self, mock_get_configs):
         """Test MISPReporter initialization in verbose mode."""
         mock_get_configs.return_value = {
@@ -40,7 +40,7 @@ class TestMISPIntegrationFunctionality:
             assert hasattr(reporter, 'config')
             assert hasattr(reporter, '_logger')
 
-    @patch('urlchecker.config.providers_enum.ProviderConfigTemplate.get_all_provider_configs')
+    @patch('url_checker_tools.config.provider_config.ProviderConfigTemplate.get_all_provider_configs')
     def test_misp_reporter_initialization_quiet_mode(self, mock_get_configs):
         """Test MISPReporter initialization in quiet mode."""
         mock_get_configs.return_value = {
@@ -64,7 +64,7 @@ class TestMISPIntegrationFunctionality:
             assert hasattr(reporter, 'config')
             assert hasattr(reporter, '_logger')
 
-    @patch('urlchecker.config.providers_enum.ProviderConfigTemplate.get_all_provider_configs')
+    @patch('url_checker_tools.config.provider_config.ProviderConfigTemplate.get_all_provider_configs')
     def test_misp_reporter_default_initialization(self, mock_get_configs):
         """Test MISPReporter initialization with default parameters."""
         mock_get_configs.return_value = {
@@ -86,7 +86,7 @@ class TestMISPIntegrationFunctionality:
 
             assert reporter._verbose == False
 
-    @patch('urlchecker.config.providers_enum.ProviderConfigTemplate.get_all_provider_configs')
+    @patch('url_checker_tools.config.provider_config.ProviderConfigTemplate.get_all_provider_configs')
     def test_misp_reporter_availability_check(self, mock_get_configs):
         """Test MISP availability checking functionality."""
         # Test with valid configuration
@@ -124,7 +124,7 @@ class TestMISPIntegrationFunctionality:
         reporter = MISPReporter()
         assert reporter.is_available() == False
 
-    @patch('urlchecker.config.providers_enum.ProviderConfigTemplate.get_all_provider_configs')
+    @patch('url_checker_tools.config.provider_config.ProviderConfigTemplate.get_all_provider_configs')
     def test_misp_reporter_pymisp_import_handling(self, mock_get_configs):
         """Test MISP reporter handles pymisp import issues gracefully."""
         mock_get_configs.return_value = {
@@ -139,7 +139,7 @@ class TestMISPIntegrationFunctionality:
         result = reporter.is_available()
         assert isinstance(result, bool)  # Should return a boolean regardless of pymisp availability
 
-    @patch('urlchecker.config.providers_enum.ProviderConfigTemplate.get_all_provider_configs')
+    @patch('url_checker_tools.config.provider_config.ProviderConfigTemplate.get_all_provider_configs')
     def test_misp_client_initialization(self, mock_get_configs):
         """Test MISP client initialization functionality."""
         mock_get_configs.return_value = {
@@ -170,7 +170,7 @@ class TestMISPIntegrationFunctionality:
             # Should test connection
             mock_client.get_user.assert_called_once()
 
-    @patch('urlchecker.config.providers_enum.ProviderConfigTemplate.get_all_provider_configs')
+    @patch('url_checker_tools.config.provider_config.ProviderConfigTemplate.get_all_provider_configs')
     def test_misp_event_creation_with_threats(self, mock_get_configs):
         """Test MISP event creation with threat results."""
         mock_get_configs.return_value = {
@@ -232,7 +232,7 @@ class TestMISPIntegrationFunctionality:
             assert result["event_id"] == 123
             assert result["uuid"] == 'test-uuid-123'
 
-    @patch('urlchecker.config.providers_enum.ProviderConfigTemplate.get_all_provider_configs')
+    @patch('url_checker_tools.config.provider_config.ProviderConfigTemplate.get_all_provider_configs')
     def test_misp_event_creation_no_threats(self, mock_get_configs):
         """Test MISP event creation with no threat results."""
         mock_get_configs.return_value = {
@@ -270,7 +270,7 @@ class TestMISPIntegrationFunctionality:
             # Verify MISP client was never created since there are no threats
             mock_pymisp_class.assert_not_called()
 
-    @patch('urlchecker.config.providers_enum.ProviderConfigTemplate.get_all_provider_configs')
+    @patch('url_checker_tools.config.provider_config.ProviderConfigTemplate.get_all_provider_configs')
     def test_misp_configuration_loading(self, mock_get_configs):
         """Test MISP configuration loading from various sources."""
         # Test with api_key field
@@ -310,7 +310,7 @@ class TestMISPIntegrationFunctionality:
         assert reporter.config.verify_ssl == False
         assert reporter.config.verifycert == True
 
-    @patch('urlchecker.config.providers_enum.ProviderConfigTemplate.get_all_provider_configs')
+    @patch('url_checker_tools.config.provider_config.ProviderConfigTemplate.get_all_provider_configs')
     def test_misp_error_handling(self, mock_get_configs):
         """Test MISP error handling functionality."""
         mock_get_configs.return_value = {
@@ -357,7 +357,7 @@ class TestMISPIntegrationFunctionality:
             # Should return None on failure
             assert result is None
 
-    @patch('urlchecker.config.providers_enum.ProviderConfigTemplate.get_all_provider_configs')
+    @patch('url_checker_tools.config.provider_config.ProviderConfigTemplate.get_all_provider_configs')
     def test_misp_ssl_warning_suppression_behavior(self, mock_get_configs):
         """Test SSL warning suppression behavior in different modes."""
         mock_get_configs.return_value = {'misp': {}}
@@ -394,7 +394,7 @@ class TestMISPIntegrationFunctionality:
         assert verbose_false == False
         assert verbose_default == False  # Default when missing
 
-    @patch('urlchecker.config.providers_enum.ProviderConfigTemplate.get_all_provider_configs')
+    @patch('url_checker_tools.config.provider_config.ProviderConfigTemplate.get_all_provider_configs')
     def test_misp_attribute_creation_ordering(self, mock_get_configs):
         """Test MISP attribute creation and ordering functionality."""
         mock_get_configs.return_value = {
@@ -456,13 +456,13 @@ class TestMISPIntegrationFunctionality:
             assert result is not None
             assert result["event_id"] == 456
 
-    @patch('urlchecker.config.providers_enum.ProviderConfigTemplate.get_all_provider_configs')
+    @patch('url_checker_tools.config.provider_config.ProviderConfigTemplate.get_all_provider_configs')
     def test_misp_configuration_fallback(self, mock_get_configs):
         """Test MISP configuration fallback mechanisms."""
         # Test configuration loading fallback
         mock_get_configs.side_effect = Exception("Config loading failed")
 
-        with patch('urlchecker.config.providers_enum.ProviderConfigTemplate.get_misp_config') as mock_fallback:
+        with patch('url_checker_tools.config.provider_config.ProviderConfigTemplate.get_misp_config') as mock_fallback:
             mock_fallback.return_value = {
                 'url': 'https://fallback.misp.com',
                 'api_key': 'fallback_key'
@@ -475,7 +475,7 @@ class TestMISPIntegrationFunctionality:
             assert reporter.config.url == 'https://fallback.misp.com'
             assert reporter.config.api_key == 'fallback_key'
 
-    @patch('urlchecker.config.providers_enum.ProviderConfigTemplate.get_all_provider_configs')
+    @patch('url_checker_tools.config.provider_config.ProviderConfigTemplate.get_all_provider_configs')
     def test_misp_reporter_thread_safety(self, mock_get_configs):
         """Test MISP reporter can handle concurrent usage."""
         import threading

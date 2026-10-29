@@ -106,7 +106,7 @@ class TestWorkflowIntegration:
         assert args.session_id == "test123"
 
         # Test robot flag application
-        with patch('urlchecker.config.robot_config.RobotModeConfig.apply_robot_flags') as mock_apply:
+        with patch('url_checker_tools.config.robot_config.RobotModeConfig.apply_robot_flags') as mock_apply:
             if args.robot:
                 from url_checker_tools.config.robot_config import RobotModeConfig
                 RobotModeConfig.apply_robot_flags(args)
@@ -322,7 +322,7 @@ class TestWorkflowIntegration:
     def test_configuration_integration(self):
         """Test configuration system integration."""
         # Test configuration loading and application
-        with patch('urlchecker.config.providers_enum.ProviderConfigTemplate.get_all_provider_configs') as mock_config:
+        with patch('url_checker_tools.config.provider_config.ProviderConfigTemplate.get_all_provider_configs') as mock_config:
             mock_config.return_value = {
                 "test_provider": {
                     "api_key": "test_key_123",
@@ -400,7 +400,7 @@ class TestWorkflowIntegration:
         mock_instance.scan_target.return_value = (threat_results, {"overall_verdict": "malicious"})
 
         # Test MISP integration workflow
-        with patch('urlchecker.integrations.misp_reporter.MISPReporter') as mock_misp_reporter:
+        with patch('url_checker_tools.integrations.misp_reporter.MISPReporter') as mock_misp_reporter:
             mock_reporter_instance = Mock()
             mock_reporter_instance.is_available.return_value = True
             mock_reporter_instance.create_event.return_value = {"event_id": 123, "uuid": "test-uuid"}
@@ -427,7 +427,7 @@ class TestWorkflowIntegration:
 
     def test_logging_integration_workflow(self):
         """Test logging integration throughout workflow."""
-        with patch('urlchecker.config.logging_config.get_logger') as mock_get_logger:
+        with patch('url_checker_tools.config.logging_config.get_logger') as mock_get_logger:
             mock_logger = Mock()
             mock_get_logger.return_value = mock_logger
 
@@ -437,7 +437,7 @@ class TestWorkflowIntegration:
 
             # Test provider logging
             try:
-                with patch('urlchecker.config.providers_enum.ProviderConfigTemplate.get_all_provider_configs'):
+                with patch('url_checker_tools.config.provider_config.ProviderConfigTemplate.get_all_provider_configs'):
                     class TestProvider(BaseProvider):
                         def is_available(self):
                             return True

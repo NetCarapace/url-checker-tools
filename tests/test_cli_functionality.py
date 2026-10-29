@@ -201,7 +201,7 @@ class TestCLIFunctionality:
         mock_instance = Mock()
         mock_url_checker.return_value = mock_instance
 
-        with patch('urlchecker.config.robot_config.RobotModeConfig.get_robot_providers') as mock_get_robot:
+        with patch('url_checker_tools.config.robot_config.RobotModeConfig.get_robot_providers') as mock_get_robot:
             mock_get_robot.return_value = ['whois', 'virustotal', 'google_sb', 'yara']
 
             def mock_determine_providers(args):
@@ -293,7 +293,7 @@ class TestCLIFunctionality:
                 # Flag may not exist, which is okay
                 pass
 
-    @patch('urlchecker.config.robot_config.RobotModeConfig.apply_robot_flags')
+    @patch('url_checker_tools.config.robot_config.RobotModeConfig.apply_robot_flags')
     def test_robot_flag_application(self, mock_apply_flags):
         """Test robot flag application is called correctly."""
         # This tests the integration point where robot flags are applied

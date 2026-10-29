@@ -173,7 +173,7 @@ class TestRealisticExternalServices:
 
         with patch("vt.Client") as mock_vt:
             with patch(
-                "urlchecker.network.key_manager.KeyManager.get_virustotal_key"
+                "url_checker_tools.network.key_manager.KeyManager.get_virustotal_key"
             ) as mock_key:
                 mock_key.return_value = "test_api_key"
 
