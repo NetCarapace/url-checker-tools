@@ -1,7 +1,14 @@
 # YARA Analysis Documentation
 
 ## Overview
-YARA (Yet Another Recursive Acronym) is a pattern-matching engine designed to identify and classify malware samples. In our URL checker, YARA analyzes downloaded content, HTML structure, JavaScript patterns, and redirect behavior to detect threats and suspicious activities.
+YARA (Yet Another Recursive Acronym) is a pattern-matching engine designed to identify and classify malware samples.
+In our URL checker, YARA analyzes downloaded content, HTML structure, JavaScript patterns, and redirect behavior
+to detect threats and suspicious activities.
+
+## Disclaimer
+The YARA scanner performs local analysis, which requires downloading potentially malicious content from submitted URLs.
+It is strongly recommended to run this scanner only in sandboxed or bastion environments, and not directly alongside
+production or user‑facing systems.
 
 ## YARA Rule Structure
 

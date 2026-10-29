@@ -10,7 +10,7 @@ from url_checker_tools.core.results import ProviderResult, ThreatLevel, Workflow
 from url_checker_tools.output.formatters import get_formatter
 from url_checker_tools.workflows.orchestrator import WorkflowOrchestrator
 
-__version__ = "0.2.0"
+__version__ = "1.0.0"
 __authors__ = "see CONTRIBUTORS.md"
 
 __all__ = [
