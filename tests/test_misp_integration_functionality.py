@@ -151,7 +151,7 @@ class TestMISPIntegrationFunctionality:
         }
 
         with patch.dict('sys.modules', {'pymisp': Mock()}), \
-             patch('pymisp.PyMISP') as mock_pymisp_class:
+             patch('url_checker_tools.integrations.misp_reporter.PyMISP') as mock_pymisp_class:
             mock_client = Mock()
             mock_client.get_user.return_value = {"user": {"id": 1}}
             mock_pymisp_class.return_value = mock_client
@@ -181,7 +181,7 @@ class TestMISPIntegrationFunctionality:
         }
 
         with patch.dict('sys.modules', {'pymisp': Mock()}), \
-             patch('pymisp.PyMISP') as mock_pymisp_class:
+             patch('url_checker_tools.integrations.misp_reporter.PyMISP') as mock_pymisp_class:
             mock_client = Mock()
             # Create a mock event that doesn't have 'errors' attribute
             mock_event = Mock(spec=['id', 'uuid'])
@@ -243,7 +243,7 @@ class TestMISPIntegrationFunctionality:
         }
 
         with patch.dict('sys.modules', {'pymisp': Mock()}), \
-             patch('pymisp.PyMISP') as mock_pymisp_class:
+             patch('url_checker_tools.integrations.misp_reporter.PyMISP') as mock_pymisp_class:
             # We don't need to set up the mock since this should return None before calling MISP
             mock_client = Mock()
             mock_pymisp_class.return_value = mock_client
@@ -321,7 +321,7 @@ class TestMISPIntegrationFunctionality:
         }
 
         with patch.dict('sys.modules', {'pymisp': Mock()}), \
-             patch('pymisp.PyMISP') as mock_pymisp_class:
+             patch('url_checker_tools.integrations.misp_reporter.PyMISP') as mock_pymisp_class:
             # Test client creation failure
             mock_pymisp_class.side_effect = Exception("Connection failed")
 
@@ -332,7 +332,7 @@ class TestMISPIntegrationFunctionality:
 
         # Test event creation failure
         with patch.dict('sys.modules', {'pymisp': Mock()}), \
-             patch('pymisp.PyMISP') as mock_pymisp_class:
+             patch('url_checker_tools.integrations.misp_reporter.PyMISP') as mock_pymisp_class:
             mock_client = Mock()
             mock_client.get_user.return_value = {"user": {"id": 1}}
             mock_client.add_event.side_effect = Exception("Event creation failed")
@@ -405,7 +405,7 @@ class TestMISPIntegrationFunctionality:
         }
 
         with patch.dict('sys.modules', {'pymisp': Mock()}), \
-             patch('pymisp.PyMISP') as mock_pymisp_class:
+             patch('url_checker_tools.integrations.misp_reporter.PyMISP') as mock_pymisp_class:
             mock_client = Mock()
             # Create a mock event that doesn't have 'errors' attribute
             mock_event = Mock(spec=['id', 'uuid'])
