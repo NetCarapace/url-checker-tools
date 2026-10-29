@@ -8,8 +8,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from url_checker_tools.cli.app import URLCheckerCLI
 from url_checker_tools.core.results import ProviderResult, ThreatLevel
+from url_checker_tools.services.misp_service import MISPReportingService
 from url_checker_tools.services.scan_request import ScanRequest
 
 TARGET = "http://example.test/login"
@@ -68,9 +68,7 @@ def make_request(verbose):
 
 def run_misp(request, results, capsys):
     """Run MISP reporting the way the CLI does; return (misp_data, stdout)."""
-    cli = URLCheckerCLI()
-    cli.session_id = request.session_id
-    misp_data = cli.handle_misp_reporting(request, results)
+    misp_data = MISPReportingService().report(request, results)
     return misp_data, capsys.readouterr().out
 
 
