@@ -367,6 +367,32 @@ class OutputService:
         if self.request.verbose:
             print(f"[ERROR] {name} exception details: {str(error)[:200]}")
 
+    def download_links_checked(
+        self, request: ScanRequest, download_urls: List[str]
+    ) -> None:
+        """Print the file scanning section."""
+        if not request.robot:
+            print("\nFILE SCANNING")
+            print("=" * 50)
+
+        if not download_urls:
+            if request.verbose:
+                print("[INFO] No download URLs detected for file scanning")
+            return
+
+        if not request.robot:
+            print(f"[INFO] Detected {len(download_urls)} potential download link(s):")
+            for i, url in enumerate(download_urls, 1):
+                print(f"  {i}. {url}")
+
+        if request.download and not request.robot:
+            print("[INFO] File download scanning would be implemented here")
+
+        if request.auto_scan_files and not request.robot:
+            print(
+                "[INFO] Auto file scanning would process these downloads automatically"
+            )
+
     def scan_finished(
         self, results: List[ProviderResult], scoring: Dict[str, Any]
     ) -> None:

@@ -7,6 +7,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from url_checker_tools.core.results import ProviderResult, ThreatLevel
 from url_checker_tools.services.file_scan_service import FileScanService
+from url_checker_tools.services.scan_request import ScanRequest
 
 
 def yara_result(details):
@@ -56,3 +57,25 @@ def test_download_urls_from_yara_rule_matches():
         "https://example.test/", [yara_result({"matches": matches})]
     )
     assert urls == ["https://example.test/x.jar"]
+
+
+def test_handle_returns_detected_urls_without_printing(capsys):
+    target = "https://example.test/setup.exe"
+    request = ScanRequest(
+        target=target,
+        providers=(),
+        session_id="test",
+        format="human",
+        raw=False,
+        robot=False,
+        verbose=True,
+        log=False,
+        score=False,
+        score_detail=False,
+        misp_report=False,
+        auto_scan_files=True,
+        download=True,
+        workflow=None,
+    )
+    assert FileScanService(logger=None).handle(request, []) == [target]
+    assert capsys.readouterr().out == ""

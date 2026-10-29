@@ -12,30 +12,17 @@ class FileScanService:
     def __init__(self, logger: Optional[WorkflowLogger]):
         self.logger = logger
 
-    def handle(self, request: ScanRequest, results: List[Any]) -> None:
-        """Handle file scanning functionality."""
+    def handle(self, request: ScanRequest, results: List[Any]) -> List[str]:
+        """Handle file scanning functionality; returns the detected download URLs."""
         target = request.target
-        if not request.robot:
-            print("\nFILE SCANNING")
-            print("=" * 50)
 
         # Extract download URLs from results (simplified logic)
         download_urls = self._extract_download_urls(target, results)
 
         if not download_urls:
-            if request.verbose:
-                print("[INFO] No download URLs detected for file scanning")
-            return
-
-        if not request.robot:
-            print(f"[INFO] Detected {len(download_urls)} potential download link(s):")
-            for i, url in enumerate(download_urls, 1):
-                print(f"  {i}. {url}")
+            return download_urls
 
         if request.download:
-            if not request.robot:
-                print("[INFO] File download scanning would be implemented here")
-
             # Log what would be done
             if self.logger:
                 self.logger.log_synthesis(
@@ -49,11 +36,6 @@ class FileScanService:
                 )
 
         if request.auto_scan_files:
-            if not request.robot:
-                print(
-                    "[INFO] Auto file scanning would process these downloads automatically"
-                )
-
             # Log what would be done
             if self.logger:
                 self.logger.log_synthesis(
@@ -65,6 +47,8 @@ class FileScanService:
                         "status": "not_implemented",
                     },
                 )
+
+        return download_urls
 
     def _extract_download_urls(self, target: str, results: List[Any]) -> List[str]:
         """Extract potential download URLs from scan results."""

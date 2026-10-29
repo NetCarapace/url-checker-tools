@@ -28,7 +28,7 @@ class RecordingEvents:
         return lambda *args: self.calls.append((event, args))
 
 
-def make_request(robot=False):
+def make_request(robot=False, file_scans=False):
     return ScanRequest(
         target=TARGET,
         providers=PROVIDERS,
@@ -41,16 +41,16 @@ def make_request(robot=False):
         score=False,
         score_detail=False,
         misp_report=False,
-        auto_scan_files=False,
-        download=False,
+        auto_scan_files=file_scans,
+        download=file_scans,
         workflow=None,
     )
 
 
-def run_scan(robot=False):
+def run_scan(robot=False, file_scans=False):
     events = RecordingEvents()
     service = ScanService(ProviderRegistry(FAKE_PROVIDERS), None, FileScanService(None))
-    results = service.run(make_request(robot), events)
+    results = service.run(make_request(robot, file_scans), events)
     return results, events.calls
 
 
@@ -96,6 +96,14 @@ def test_robot_mode_adds_placeholder_results_for_providers_that_did_not_run():
 
 
 def test_scan_writes_nothing_to_stdout(capsys):
-    run_scan(robot=False)
-    run_scan(robot=True)
+    for robot in (False, True):
+        for file_scans in (False, True):
+            run_scan(robot=robot, file_scans=file_scans)
     assert capsys.readouterr().out == ""
+
+
+def test_file_scanning_is_reported_as_an_event():
+    _, calls = run_scan(file_scans=True)
+    events = [event for event, _ in calls]
+    assert events.index("download_links_checked") == len(events) - 2
+    assert events[-1] == "scan_finished"

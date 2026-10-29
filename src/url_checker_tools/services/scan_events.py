@@ -30,6 +30,11 @@ class ScanEvents(Protocol):
     def provider_failed(self, name: str, error: Exception) -> None:
         """The provider raised an exception."""
 
+    def download_links_checked(
+        self, request: ScanRequest, download_urls: List[str]
+    ) -> None:
+        """File scanning looked for download links (only with --download/--auto-scan-files)."""
+
     def scan_finished(
         self, results: List[ProviderResult], scoring: Dict[str, Any]
     ) -> None:

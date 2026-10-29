@@ -104,7 +104,8 @@ class ScanService:
 
         # Handle file scanning if enabled
         if (request.auto_scan_files or request.download) and results:
-            self.file_scans.handle(request, results)
+            download_urls = self.file_scans.handle(request, results)
+            events.download_links_checked(request, download_urls)
 
         scoring = UnifiedThreatScorer().calculate_threat_score(results)
 
