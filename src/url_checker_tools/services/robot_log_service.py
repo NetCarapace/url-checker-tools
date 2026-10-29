@@ -2,7 +2,8 @@
 
 import json
 from datetime import datetime, timezone
-from typing import Any, List, Optional
+from pathlib import Path
+from typing import Any, List, Optional, Tuple
 
 from url_checker_tools.config.logging_config import WorkflowLogger
 
@@ -20,39 +21,25 @@ class RobotLogBuilder:
         results: List[Any],
         synthesis_json: str,
         misp_data: dict = None,
-    ) -> None:
-        """Create comprehensive dual log files for robot mode matching old format."""
-        try:
-            from urllib.parse import urlparse
+    ) -> Tuple[Path, Path]:
+        """Create comprehensive dual log files for robot mode; returns their paths."""
+        # Create comprehensive target info
+        target_info = self._get_target_info(target, results)
 
-            # Create comprehensive target info
-            target_info = self._get_target_info(target, results)
+        # Create comprehensive synthesis log (.log)
+        synthesis_data = self._create_comprehensive_synthesis(
+            target, results, synthesis_json, target_info, misp_data
+        )
+        synthesis_json_final = json.dumps(synthesis_data, indent=2, ensure_ascii=False)
 
-            # Create comprehensive synthesis log (.log)
-            synthesis_data = self._create_comprehensive_synthesis(
-                target, results, synthesis_json, target_info, misp_data
-            )
-            synthesis_json_final = json.dumps(
-                synthesis_data, indent=2, ensure_ascii=False
-            )
+        # Create comprehensive detailed log (.dlog)
+        detailed_data = self._create_comprehensive_detailed(
+            target, results, target_info, misp_data
+        )
+        detailed_json = json.dumps(detailed_data, indent=2, ensure_ascii=False)
 
-            # Create comprehensive detailed log (.dlog)
-            detailed_data = self._create_comprehensive_detailed(
-                target, results, target_info, misp_data
-            )
-            detailed_json = json.dumps(detailed_data, indent=2, ensure_ascii=False)
-
-            # Create the dual log files
-            synthesis_path, detailed_path = self.logger.create_dual_logs(
-                target, synthesis_json_final, detailed_json
-            )
-
-            print(f"[INFO] Robot logs created:")
-            print(f"  Synthesis: {synthesis_path}")
-            print(f"  Detailed: {detailed_path}")
-
-        except Exception as e:
-            print(f"[ERROR] Failed to create robot logs: {e}")
+        # Create the dual log files
+        return self.logger.create_dual_logs(target, synthesis_json_final, detailed_json)
 
     def _get_target_info(self, target: str, results: List[Any]) -> dict:
         """Get comprehensive target information matching old format."""

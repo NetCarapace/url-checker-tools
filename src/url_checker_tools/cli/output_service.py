@@ -60,7 +60,7 @@ class OutputService:
 
             # Create dual logs for robot mode
             if request.robot and self.logger:
-                self.write_robot_logs(request.target, results, output_str, misp_data)
+                self._write_robot_logs(request.target, results, output_str, misp_data)
 
         elif request.format == "synthesis":
             # Synthesis output - only calculate scoring if --score or --score-detail flag is present
@@ -115,7 +115,7 @@ class OutputService:
 
             # Create dual logs for robot mode
             if request.robot and self.logger:
-                self.write_robot_logs(request.target, results, output_str, misp_data)
+                self._write_robot_logs(request.target, results, output_str, misp_data)
 
         elif request.format == "human":
             # Human-readable output - capture for logging if needed
@@ -144,6 +144,20 @@ class OutputService:
                 print(f"[INFO] Log saved to: {log_path}")
             except Exception as e:
                 print(f"[ERROR] Failed to create log file: {e}")
+
+    def _write_robot_logs(
+        self, target: str, results: List[Any], synthesis_json: str, misp_data: dict
+    ) -> None:
+        """Write the robot logs and print where they are (or why they failed)."""
+        try:
+            synthesis_path, detailed_path = self.write_robot_logs(
+                target, results, synthesis_json, misp_data
+            )
+            print("[INFO] Robot logs created:")
+            print(f"  Synthesis: {synthesis_path}")
+            print(f"  Detailed: {detailed_path}")
+        except Exception as e:
+            print(f"[ERROR] Failed to create robot logs: {e}")
 
     def robot_verbose_summary(self, results: List[Any], target: str) -> None:
         """Show detailed human-readable summary for robot verbose mode."""
