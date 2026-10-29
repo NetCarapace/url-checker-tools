@@ -61,6 +61,20 @@ class ProviderResult:
         """Check if this represents a threat that requires action."""
         return self.threat_level in [ThreatLevel.MALICIOUS, ThreatLevel.CRITICAL]
 
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for serialization."""
+        return {
+            "provider": self.provider,
+            "target": self.target,
+            "is_threat": self.is_threat,
+            "threat_level": self.threat_level.value,
+            "confidence": self.confidence,
+            "execution_time": self.execution_time,
+            "error_message": self.error_message,
+            "timestamp": self.timestamp.isoformat(),
+            "details": self.details,
+        }
+
 
 @dataclass(slots=True)
 class WorkflowResult:

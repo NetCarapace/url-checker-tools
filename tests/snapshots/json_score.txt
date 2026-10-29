@@ -103,11 +103,85 @@ Summary: 5 providers, 1 threats detected
 {
   "session_id": "snap",
   "results": [
-    "ProviderResult(provider='whois', target='http://example.test/login', is_threat=False, threat_level=<ThreatLevel.SAFE: 'safe'>, confidence=0.9, details={'domain_name': 'example.test', 'registrar': 'Example Registrar', 'domain_age_days': 9000}, timestamp=<datetime>, execution_time=0.5, error_message=None)",
-    "ProviderResult(provider='link_analyzer', target='http://example.test/login', is_threat=False, threat_level=<ThreatLevel.SAFE: 'safe'>, confidence=0.9, details={'redirect_count': 1, 'final_url': 'https://example.test/login', 'domain_changed': False, 'resolved_ips': ['192.0.2.10', '2001:db8::10']}, timestamp=<datetime>, execution_time=0.5, error_message=None)",
-    "ProviderResult(provider='misp', target='http://example.test/login', is_threat=False, threat_level=<ThreatLevel.SAFE: 'safe'>, confidence=0.9, details={'events_found': 0}, timestamp=<datetime>, execution_time=0.5, error_message=None)",
-    "ProviderResult(provider='virustotal', target='http://example.test/login', is_threat=True, threat_level=<ThreatLevel.MALICIOUS: 'malicious'>, confidence=0.8, details={'malicious_count': 5, 'total_engines': 90, 'categories': ['phishing', 'Phishing']}, timestamp=<datetime>, execution_time=0.5, error_message=None)",
-    "ProviderResult(provider='yara', target='http://example.test/login', is_threat=False, threat_level=<ThreatLevel.SAFE: 'safe'>, confidence=0.9, details={'scan_summary': 'No pattern matches', 'matches': []}, timestamp=<datetime>, execution_time=0.5, error_message=None)"
+    {
+      "provider": "whois",
+      "target": "http://example.test/login",
+      "is_threat": false,
+      "threat_level": "safe",
+      "confidence": 0.9,
+      "execution_time": 0.5,
+      "error_message": null,
+      "timestamp": "<ts>",
+      "details": {
+        "domain_name": "example.test",
+        "registrar": "Example Registrar",
+        "domain_age_days": 9000
+      }
+    },
+    {
+      "provider": "link_analyzer",
+      "target": "http://example.test/login",
+      "is_threat": false,
+      "threat_level": "safe",
+      "confidence": 0.9,
+      "execution_time": 0.5,
+      "error_message": null,
+      "timestamp": "<ts>",
+      "details": {
+        "redirect_count": 1,
+        "final_url": "https://example.test/login",
+        "domain_changed": false,
+        "resolved_ips": [
+          "192.0.2.10",
+          "2001:db8::10"
+        ]
+      }
+    },
+    {
+      "provider": "misp",
+      "target": "http://example.test/login",
+      "is_threat": false,
+      "threat_level": "safe",
+      "confidence": 0.9,
+      "execution_time": 0.5,
+      "error_message": null,
+      "timestamp": "<ts>",
+      "details": {
+        "events_found": 0
+      }
+    },
+    {
+      "provider": "virustotal",
+      "target": "http://example.test/login",
+      "is_threat": true,
+      "threat_level": "malicious",
+      "confidence": 0.8,
+      "execution_time": 0.5,
+      "error_message": null,
+      "timestamp": "<ts>",
+      "details": {
+        "malicious_count": 5,
+        "total_engines": 90,
+        "categories": [
+          "phishing",
+          "Phishing"
+        ]
+      }
+    },
+    {
+      "provider": "yara",
+      "target": "http://example.test/login",
+      "is_threat": false,
+      "threat_level": "safe",
+      "confidence": 0.9,
+      "execution_time": 0.5,
+      "error_message": null,
+      "timestamp": "<ts>",
+      "details": {
+        "scan_summary": "No pattern matches",
+        "matches": []
+      }
+    }
   ],
   "scoring": {
     "final_score": 23,
