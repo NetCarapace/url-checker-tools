@@ -534,3 +534,36 @@ def test_misp_tls_verification_default_and_opt_out(monkeypatch, env_value, expec
     misp = ProviderConfigTemplate.get_all_provider_configs()["misp"]
     assert misp["verify_ssl"] is expected
     assert misp["verifycert"] is expected
+
+
+@pytest.mark.parametrize(
+    "url_var, key_var",
+    [
+        ("URLCHECKERTOOLS_MISP_URL", "URLCHECKERTOOLS_MISP_APIKEY"),
+        ("MISP_URL", "MISP_API_KEY"),
+    ],
+)
+def test_misp_env_vars(monkeypatch, url_var, key_var):
+    """MISP URL/key come from the v1.0 env names, with the old names as fallback."""
+    from url_checker_tools.config.provider_config import ProviderConfigTemplate
+
+    for var in ("URLCHECKERTOOLS_MISP_URL", "URLCHECKERTOOLS_MISP_APIKEY", "MISP_URL", "MISP_API_KEY", "MISP_KEY"):
+        monkeypatch.delenv(var, raising=False)
+    monkeypatch.setenv(url_var, "https://misp.example.test")
+    monkeypatch.setenv(key_var, "env-key")
+    misp = ProviderConfigTemplate.get_all_provider_configs()["misp"]
+    assert misp["url"] == "https://misp.example.test"
+    assert misp["api_key"] == "env-key"
+
+
+def test_misp_keyring_url_replaces_default(monkeypatch):
+    """A MISP URL stored in keyring is used when no env var is set."""
+    from url_checker_tools.config.provider_config import ProviderConfigTemplate
+
+    for var in ("URLCHECKERTOOLS_MISP_URL", "URLCHECKERTOOLS_MISP_APIKEY", "MISP_URL", "MISP_API_KEY", "MISP_KEY"):
+        monkeypatch.delenv(var, raising=False)
+    stored = {"misp_url": "https://misp.keyring.test", "misp": "kr-key"}
+    with patch("keyring.get_password", side_effect=lambda service, account: stored.get(account)):
+        misp = ProviderConfigTemplate.get_all_provider_configs()["misp"]
+    assert misp["url"] == "https://misp.keyring.test"
+    assert misp["api_key"] == "kr-key"

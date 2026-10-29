@@ -256,8 +256,12 @@ class ProviderConfigTemplate:
 
             # MISP (URL + API key). KeyManager doesn’t define these; read env vars and try keyring accounts if present
             # Prefer environment variables if set
-            misp_url_env = os.getenv("MISP_URL")
-            misp_key_env = os.getenv("MISP_API_KEY") or os.getenv("MISP_KEY")
+            misp_url_env = os.getenv("URLCHECKERTOOLS_MISP_URL") or os.getenv("MISP_URL")
+            misp_key_env = (
+                os.getenv("URLCHECKERTOOLS_MISP_APIKEY")
+                or os.getenv("MISP_API_KEY")
+                or os.getenv("MISP_KEY")
+            )
             if misp_url_env:
                 configs["misp"]["url"] = misp_url_env
             if os.getenv("URLCHECKERTOOLS_MISP_VERIFYSSL", "").lower() == "false":
@@ -273,7 +277,7 @@ class ProviderConfigTemplate:
                     k_key = _kr.get_password("urlchecker", "misp") or _kr.get_password(
                         "urlchecker", "misp_api_key"
                     )
-                    if k_url and not configs["misp"].get("url"):
+                    if k_url and not misp_url_env:
                         configs["misp"]["url"] = k_url.strip()
                     if k_key and not configs["misp"].get("api_key"):
                         configs["misp"]["api_key"] = k_key.strip()
