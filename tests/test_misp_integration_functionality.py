@@ -414,7 +414,7 @@ class TestMISPIntegrationFunctionality:
 
             mock_client.get_user.return_value = {"user": {"id": 1}}
             mock_client.add_event.return_value = mock_event
-            mock_client.add_attribute.return_value = Mock()
+            mock_client.add_object.return_value = Mock()
             mock_client.tag.return_value = Mock()
             mock_client.search.return_value = []
 
@@ -447,9 +447,10 @@ class TestMISPIntegrationFunctionality:
             reporter = MISPReporter()
             result = reporter.create_event("https://test.example.com", comprehensive_results, "session_456")
 
-            # Should create event and add multiple attributes
+            # Should create event, then add MISP objects (URL object first)
             assert mock_client.add_event.called
-            assert mock_client.add_attribute.called
+            added = [c.args[1] for c in mock_client.add_object.call_args_list]
+            assert added and added[0].name == "url"
             assert mock_client.tag.called
 
             # Should return valid result
