@@ -35,6 +35,7 @@ CASES = {
     "robot_misp_report": ["--robot", "--misp-report"],
     "list_providers": ["--list-providers"],
     "providers_status": ["--providers-status"],
+    "auto_scan_files": EXTRA + ["--auto-scan-files", "--verbose"],
 }
 
 
