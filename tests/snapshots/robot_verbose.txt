@@ -213,6 +213,15 @@ ERROR: {"timestamp": "<ts>", "event_type": "error", "session_id": "snap", "provi
       "contains_shorteners": false,
       "suspicious_patterns": []
     },
+    "yara": {
+      "type": "clean",
+      "redirects": 0,
+      "url_shorteners": 0,
+      "domain_change": null,
+      "security_downgrades": 0,
+      "download_links": 0,
+      "flags": []
+    },
     "result": {
       "verdict": "SAFE",
       "threat_score": 18,

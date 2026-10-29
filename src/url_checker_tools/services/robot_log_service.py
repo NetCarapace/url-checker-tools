@@ -248,6 +248,7 @@ class RobotLogBuilder:
         providers_summary = {}
         whois_info = {}
         link_analysis = {}
+        yara_info = {}
         metadata_analysis = {
             "behavioral_anomalies": [],
             "risk_indicators": [],
@@ -499,7 +500,7 @@ class RobotLogBuilder:
         # Add conditional sections first
         if link_analysis:
             enhanced["link_analysis"] = link_analysis
-        if "yara" in locals():
+        if yara_info:
             enhanced["yara"] = yara_info
 
         # Always add result section LAST to ensure proper ordering in logs
