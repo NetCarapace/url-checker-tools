@@ -25,6 +25,7 @@ from url_checker_tools.providers.virustotal import VirusTotalProvider
 from url_checker_tools.providers.whalebone import WhaleboneProvider
 from url_checker_tools.providers.whois import WhoisProvider
 from url_checker_tools.providers.yara import YaraProvider
+from url_checker_tools.services.scan_request import ScanRequest
 from url_checker_tools.workflows.orchestrator import WorkflowOrchestrator
 
 
@@ -510,24 +511,24 @@ Examples:
 
     def scan_direct(
         self,
-        target: str,
-        providers: List[str],
-        args,
+        request: ScanRequest,
         misp_reporting_enabled: bool = False,
     ) -> List[Any]:
         """Perform direct scanning with specified providers."""
+        target = request.target
+        providers = request.providers
         results = []
 
         # Setup output formatting
-        output_format = "json" if args.raw else args.format
+        output_format = "json" if request.raw else request.format
         formatter = get_formatter(output_format)
 
         # Robot mode output handling
-        if args.robot:
+        if request.robot:
             # Always show SID first in robot mode
             print(f"SID: {self.session_id}")
 
-            if args.verbose:
+            if request.verbose:
                 print(f"[INFO] Target: {target}")
                 print(f"[INFO] Enabled providers: {', '.join(providers)}")
             else:
@@ -546,20 +547,20 @@ Examples:
                     print(f"[SCAN] Checking: {', '.join(active_providers)}")
         else:
             print(f"Scanning {target}...")
-            if args.verbose:
+            if request.verbose:
                 print(f"[INFO] Enabled providers: {', '.join(providers)}")
 
         # Scan with each provider
         for provider_name in providers:
             provider_class = self.available_providers.get(provider_name)
             if not provider_class:
-                if not args.robot:
+                if not request.robot:
                     print(f"Unknown provider: {provider_name}")
                 continue
 
-            if not args.robot:
+            if not request.robot:
                 print(f"Running {provider_name}...")
-                if args.verbose:
+                if request.verbose:
                     print(f"[INFO] Starting {provider_name} scan...")
 
             try:
@@ -568,12 +569,12 @@ Examples:
 
                 # Set verbose flag for base config if possible
                 if hasattr(provider.config, "verbose"):
-                    provider.config.verbose = args.verbose
+                    provider.config.verbose = request.verbose
 
                 with provider:
                     if provider.is_available():
                         # In robot mode, suppress individual provider verbose messages during scanning
-                        if args.verbose and not args.robot:
+                        if request.verbose and not request.robot:
                             print(
                                 f"[INFO] {provider_name} provider is available, starting scan..."
                             )
@@ -586,25 +587,25 @@ Examples:
                             self.logger.log_provider_result(result)
 
                         # Verbose execution details (suppress in robot mode during scanning)
-                        if args.verbose and not args.robot:
+                        if request.verbose and not request.robot:
                             exec_time = getattr(result, "execution_time", 0) or 0
                             print(
                                 f"[INFO] {provider_name} completed in {exec_time:.2f}s - {'Threat' if result.is_threat else 'Safe'}"
                             )
 
                         # Display result (unless in robot mode)
-                        if not args.robot:
+                        if not request.robot:
                             print(formatter.format_provider_result(result))
                     else:
-                        if not args.robot:
+                        if not request.robot:
                             print(f"  {provider_name} is not properly configured")
                         # In robot mode, suppress availability warnings during scanning
-                        if args.verbose and not args.robot:
+                        if request.verbose and not request.robot:
                             print(
                                 f"[WARNING] {provider_name} provider availability check failed"
                             )
                         # In robot mode, record an error result so summaries include all enabled providers
-                        if args.robot:
+                        if request.robot:
                             from url_checker_tools.core.results import (
                                 ProviderResult,
                                 ThreatLevel,
@@ -629,14 +630,14 @@ Examples:
 
             except Exception as e:
                 error_msg = f"{provider_name} scan failed: {e}"
-                if not args.robot:
+                if not request.robot:
                     print(f"   {error_msg}")
-                if args.verbose:
+                if request.verbose:
                     print(f"[ERROR] {provider_name} exception details: {str(e)[:200]}")
                 if self.logger:
                     self.logger.log_error(target, provider_name, error_msg)
                 # In robot mode, append an error result so it's reflected in summaries and scoring
-                if args.robot:
+                if request.robot:
                     from url_checker_tools.core.results import (
                         ProviderResult,
                         ThreatLevel,
@@ -657,11 +658,11 @@ Examples:
                     )
 
         # Handle file scanning if enabled
-        if (args.auto_scan_files or args.download) and results:
-            self._handle_file_scanning(target, results, args)
+        if (request.auto_scan_files or request.download) and results:
+            self._handle_file_scanning(request, results)
 
         # Summary with optional scoring
-        if not args.robot:
+        if not request.robot:
             threat_count = sum(1 for r in results if r.is_threat and not r.is_error)
             safe_count = sum(1 for r in results if not r.is_threat and not r.is_error)
             error_count = sum(1 for r in results if r.is_error)
@@ -671,7 +672,7 @@ Examples:
             )
 
             # Scoring breakdown if requested
-            if (args.score or args.score_detail) and results:
+            if (request.score or request.score_detail) and results:
                 from url_checker_tools.analysis.unified_scorer import (
                     UnifiedThreatScorer,
                 )
@@ -680,7 +681,7 @@ Examples:
                 scoring_data = scorer.calculate_threat_score(results)
 
                 # --score-detail supersedes --score
-                if getattr(args, "score_detail", False):
+                if request.score_detail:
                     print(f"\n{scorer.format_scoring_details(scoring_data)}")
                 else:
                     # Basic score output - use appropriate format
@@ -698,7 +699,7 @@ Examples:
                         },
                     )
 
-            if args.verbose:
+            if request.verbose:
                 print("[INFO] Provider results breakdown:")
                 print(f"  - Safe: {safe_count}")
                 print(f"  - Threats: {threat_count}")
@@ -706,7 +707,7 @@ Examples:
 
         # Robot mode: Add RESULT output and optional verbose summary
         # Robot mode automatically behaves like --format synthesis --score (basic scoring, not detailed)
-        if args.robot:
+        if request.robot:
             # Use unified scoring system for robot mode (always enabled)
             from url_checker_tools.analysis.unified_scorer import UnifiedThreatScorer
 
@@ -737,10 +738,10 @@ Examples:
                     }
                 }
                 robot_synthesis_str = json.dumps(robot_synthesis, indent=2)
-                self._create_robot_logs(args.target, results, robot_synthesis_str)
+                self._create_robot_logs(request.target, results, robot_synthesis_str)
 
             # Verbose robot mode: show human-readable summary
-            if args.verbose:
+            if request.verbose:
                 self._show_robot_verbose_summary(results, target)
 
         return results
@@ -865,20 +866,20 @@ Examples:
                     print(f"   └─ Threat Level: {threat_level.value}")
 
     def handle_output_format(
-        self, results: List[Any], args, misp_data: dict = None
+        self, results: List[Any], request: ScanRequest, misp_data: dict = None
     ) -> None:
         """Handle different output formats."""
         output_str = None
         scoring_data = None
 
         # Calculate scoring data if requested (for inclusion in logs)
-        if (args.score or getattr(args, "score_detail", False)) and results:
+        if (request.score or request.score_detail) and results:
             from url_checker_tools.analysis.unified_scorer import UnifiedThreatScorer
 
             scorer = UnifiedThreatScorer()
             scoring_data = scorer.calculate_threat_score(results)
 
-        if args.format == "json" or args.raw or args.robot:
+        if request.format == "json" or request.raw or request.robot:
             # JSON output (default for robot mode)
             json_output = {
                 "session_id": self.session_id,
@@ -892,16 +893,16 @@ Examples:
                 json_output["scoring"] = scoring_data
 
             output_str = json.dumps(json_output, indent=2)
-            if not args.robot:
+            if not request.robot:
                 print(output_str)
 
             # Create dual logs for robot mode
-            if args.robot and self.logger:
-                self._create_robot_logs(args.target, results, output_str, misp_data)
+            if request.robot and self.logger:
+                self._create_robot_logs(request.target, results, output_str, misp_data)
 
-        elif args.format == "synthesis":
+        elif request.format == "synthesis":
             # Synthesis output - only calculate scoring if --score or --score-detail flag is present
-            if args.score or getattr(args, "score_detail", False):
+            if request.score or request.score_detail:
                 # Use pre-calculated scoring data
                 if not scoring_data:
                     from url_checker_tools.analysis.unified_scorer import (
@@ -947,14 +948,14 @@ Examples:
                     }
                 }
             output_str = json.dumps(synthesis, indent=2)
-            if not args.robot:
+            if not request.robot:
                 print(output_str)
 
             # Create dual logs for robot mode
-            if args.robot and self.logger:
-                self._create_robot_logs(args.target, results, output_str, misp_data)
+            if request.robot and self.logger:
+                self._create_robot_logs(request.target, results, output_str, misp_data)
 
-        elif args.format == "human":
+        elif request.format == "human":
             # Human-readable output - capture for logging if needed
             formatter = get_formatter("human")
             human_lines = []
@@ -965,15 +966,18 @@ Examples:
                     human_lines.append(formatted_result)
 
             # If logging enabled, format human output for log file
-            if args.log and self.logger and not args.robot:
+            if request.log and self.logger and not request.robot:
                 output_str = "\n".join(human_lines)
 
         # Create single log file for --log mode (not robot mode)
-        if args.log and self.logger and not args.robot and output_str:
+        if request.log and self.logger and not request.robot and output_str:
             try:
                 # Pass scoring data to the logger if available
                 log_path = self.logger.create_session_log(
-                    args.target, output_str, args.format, scoring_data=scoring_data
+                    request.target,
+                    output_str,
+                    request.format,
+                    scoring_data=scoring_data,
                 )
                 print(f"[INFO] Log saved to: {log_path}")
             except Exception as e:
@@ -1555,6 +1559,7 @@ Examples:
 
         # Determine providers
         providers = self.determine_providers_from_args(args)
+        request = ScanRequest.from_args(args, providers, self.session_id)
 
         try:
             if args.workflow:
@@ -1574,19 +1579,17 @@ Examples:
             else:
                 # Direct scanning
                 results = self.scan_direct(
-                    args.target,
-                    providers,
-                    args,
+                    request,
                     misp_reporting_enabled=args.misp_report,
                 )
 
                 # MISP reporting (if enabled) - do this before output format to capture event ID
                 misp_data = None
                 if args.misp_report and results:
-                    misp_data = self.handle_misp_reporting(args.target, results, args)
+                    misp_data = self.handle_misp_reporting(request, results)
 
                 # Handle output format (now with MISP data available)
-                self.handle_output_format(results, args, misp_data=misp_data)
+                self.handle_output_format(results, request, misp_data=misp_data)
 
         except KeyboardInterrupt:
             if not args.robot:
@@ -1606,9 +1609,10 @@ Examples:
                 traceback.print_exc()
             sys.exit(1)
 
-    def _handle_file_scanning(self, target: str, results: List[Any], args) -> None:
+    def _handle_file_scanning(self, request: ScanRequest, results: List[Any]) -> None:
         """Handle file scanning functionality."""
-        if not args.robot:
+        target = request.target
+        if not request.robot:
             print("\nFILE SCANNING")
             print("=" * 50)
 
@@ -1616,17 +1620,17 @@ Examples:
         download_urls = self._extract_download_urls(target, results)
 
         if not download_urls:
-            if args.verbose:
+            if request.verbose:
                 print("[INFO] No download URLs detected for file scanning")
             return
 
-        if not args.robot:
+        if not request.robot:
             print(f"[INFO] Detected {len(download_urls)} potential download link(s):")
             for i, url in enumerate(download_urls, 1):
                 print(f"  {i}. {url}")
 
-        if args.download:
-            if not args.robot:
+        if request.download:
+            if not request.robot:
                 print("[INFO] File download scanning would be implemented here")
 
             # Log what would be done
@@ -1641,8 +1645,8 @@ Examples:
                     },
                 )
 
-        if args.auto_scan_files:
-            if not args.robot:
+        if request.auto_scan_files:
+            if not request.robot:
                 print(
                     "[INFO] Auto file scanning would process these downloads automatically"
                 )
@@ -1721,20 +1725,21 @@ Examples:
         url_lower = url.lower().split("?")[0]  # Remove query params
         return any(url_lower.endswith(ext) for ext in download_extensions)
 
-    def handle_misp_reporting(self, target: str, results: List[Any], args) -> dict:
+    def handle_misp_reporting(self, request: ScanRequest, results: List[Any]) -> dict:
         """Handle MISP threat intelligence reporting."""
+        target = request.target
         misp_data = {"event_id": None, "status": "not_attempted", "error": None}
 
         try:
             from url_checker_tools.integrations.misp_reporter import MISPReporter
 
             # Create MISP reporter
-            reporter = MISPReporter(verbose=getattr(args, "verbose", False))
+            reporter = MISPReporter(verbose=request.verbose)
 
             if not reporter.is_available():
                 misp_data["status"] = "unavailable"
                 misp_data["error"] = "MISP reporter not available - check configuration"
-                if args.verbose:
+                if request.verbose:
                     print(f"[WARNING] {misp_data['error']}")
                 return misp_data
 
@@ -1745,7 +1750,7 @@ Examples:
 
             if not threat_results:
                 misp_data["status"] = "skipped_no_threats"
-                if args.verbose:
+                if request.verbose:
                     print("[INFO] No threats detected - skipping MISP report")
                 return misp_data
 
@@ -1758,7 +1763,7 @@ Examples:
                 misp_data["event_id"] = event_result["event_id"]
                 misp_data["uuid"] = event_result["uuid"]
                 misp_data["status"] = "success"
-                if args.verbose:
+                if request.verbose:
                     print(
                         f"[INFO] MISP event created: Event ID {event_result['event_id']} (UUID: {event_result['uuid']})"
                     )
@@ -1767,18 +1772,18 @@ Examples:
             else:
                 misp_data["status"] = "failed"
                 misp_data["error"] = "Failed to create MISP event"
-                if args.verbose:
+                if request.verbose:
                     print(f"[ERROR] {misp_data['error']}")
 
         except ImportError:
             misp_data["status"] = "module_unavailable"
             misp_data["error"] = "MISP integration module not available"
-            if args.verbose:
+            if request.verbose:
                 print(f"[WARNING] {misp_data['error']}")
         except Exception as e:
             misp_data["status"] = "error"
             misp_data["error"] = str(e)
-            if args.verbose:
+            if request.verbose:
                 print(f"[ERROR] MISP reporting failed: {e}")
             else:
                 print(f"MISP reporting error: {e}")
