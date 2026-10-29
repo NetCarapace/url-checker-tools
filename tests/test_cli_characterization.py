@@ -170,3 +170,15 @@ def test_cli_output_matches_snapshot(case, tmp_path, monkeypatch, capsys):
         snapshot.parent.mkdir(exist_ok=True)
         snapshot.write_text(actual, encoding="utf-8")
     assert actual == snapshot.read_text(encoding="utf-8")
+
+
+def test_robot_result_unknown_when_no_provider_ran(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(logging_config, "_global_logger", None)
+    cli = URLCheckerCLI()
+    cli.available_providers = {
+        name: fake_provider(name, available=False) for name in FAKE_PROVIDERS
+    }
+    with patch.object(sys, "argv", ["url-checker", TARGET, "--robot", "--sid", "snap"]):
+        cli.main()
+    assert "RESULT: UNKNOWN (0/100)" in capsys.readouterr().out

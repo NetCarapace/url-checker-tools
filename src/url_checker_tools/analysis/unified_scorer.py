@@ -96,10 +96,10 @@ class UnifiedThreatScorer:
         return "CRITICAL"
 
     def _create_empty_score(self) -> Dict[str, Any]:
-        """Create empty score result."""
+        """Create the score used when no provider produced a result."""
         return {
             "final_score": 0,
-            "verdict": "SAFE",
+            "verdict": "UNKNOWN",
             "provider_count": 0,
             "threat_count": 0,
             "multi_provider_boost": False,
@@ -145,6 +145,7 @@ class UnifiedThreatScorer:
     def get_threat_level_mapping(self) -> Dict[str, str]:
         """Get mapping from verdicts to threat levels for synthesis output."""
         return {
+            "UNKNOWN": "unknown",
             "SAFE": "safe",
             "SUSPICIOUS": "medium",
             "MALICIOUS": "high",
