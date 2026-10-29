@@ -26,7 +26,7 @@ class RobotLogBuilder:
             from urllib.parse import urlparse
 
             # Create comprehensive target info
-            target_info = self._get_target_info(target)
+            target_info = self._get_target_info(target, results)
 
             # Create comprehensive synthesis log (.log)
             synthesis_data = self._create_comprehensive_synthesis(
@@ -54,7 +54,7 @@ class RobotLogBuilder:
         except Exception as e:
             print(f"[ERROR] Failed to create robot logs: {e}")
 
-    def _get_target_info(self, target: str) -> dict:
+    def _get_target_info(self, target: str, results: List[Any]) -> dict:
         """Get comprehensive target information matching old format."""
         import hashlib
         from urllib.parse import urlparse
@@ -104,7 +104,7 @@ class RobotLogBuilder:
                 # Add DNS resolution if available
                 dns_results = [
                     r
-                    for r in getattr(self, "_all_results", [])
+                    for r in results
                     if hasattr(r, "provider")
                     and r.provider.lower() in ["link_analyzer", "dns"]
                 ]
