@@ -10,7 +10,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-import url_checker_tools as cli
+import url_checker_tools.cli as cli
 
 
 class TestCLIFunctionality:
@@ -151,7 +151,7 @@ class TestCLIFunctionality:
             args = parser.parse_args([url])
             assert args.target == url
 
-    @patch('url_checker_tools.URLCheckerCLI')
+    @patch('url_checker_tools.cli.app.URLCheckerCLI')
     def test_provider_selection_all_flag(self, mock_url_checker):
         """Test provider selection logic with --all flag."""
         mock_instance = Mock()
@@ -195,7 +195,7 @@ class TestCLIFunctionality:
         providers = mock_instance._determine_providers(args)
         assert set(providers) == set(mock_instance.available_providers.keys())
 
-    @patch('url_checker_tools.URLCheckerCLI')
+    @patch('url_checker_tools.cli.app.URLCheckerCLI')
     def test_provider_selection_robot_mode(self, mock_url_checker):
         """Test provider selection logic in robot mode."""
         mock_instance = Mock()

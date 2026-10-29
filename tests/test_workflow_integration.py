@@ -50,7 +50,7 @@ class TestWorkflowIntegration:
         }
 
         # Import and test the workflow
-        import url_checker_tools as cli
+        import url_checker_tools.cli as cli
 
         # Test argument parsing
         parser = cli.URLCheckerCLI().create_argument_parser()
@@ -97,7 +97,7 @@ class TestWorkflowIntegration:
         mock_instance.scan_target.return_value = (robot_results, {"overall_verdict": "malicious"})
 
         # Test robot mode workflow
-        import url_checker_tools as cli
+        import url_checker_tools.cli as cli
 
         parser = cli.URLCheckerCLI().create_argument_parser()
         args = parser.parse_args(["--robot", "--sid", "test123", "https://test.com"])
@@ -140,7 +140,7 @@ class TestWorkflowIntegration:
 
         mock_instance.scan_target.return_value = (all_results, {"overall_verdict": "safe"})
 
-        import url_checker_tools as cli
+        import url_checker_tools.cli as cli
 
         parser = cli.URLCheckerCLI().create_argument_parser()
         args = parser.parse_args(["--all", "https://comprehensive-test.com"])
@@ -303,7 +303,7 @@ class TestWorkflowIntegration:
 
         mock_instance.scan_target.return_value = (session_results, {"session_id": "session123"})
 
-        import url_checker_tools as cli
+        import url_checker_tools.cli as cli
 
         # Test session ID handling
         parser = cli.URLCheckerCLI().create_argument_parser()

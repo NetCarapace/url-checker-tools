@@ -57,7 +57,7 @@ dev = [
 Homepage = "https://git.restena.lu/RESTENA/csirt/services/ngsoti/url-checker-tools"
 
 [project.scripts]
-url-checker = "url_checker_tools:main"
+url-checker = "url_checker_tools.cli:main"
 #run-tests = "pytest tests/"
 
 [build-system]
