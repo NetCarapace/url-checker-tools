@@ -5,7 +5,7 @@ import logging
 import warnings
 from typing import Any, Dict, List, Optional
 
-from url_checker_tools.config.providers_enum import ProviderConfigTemplate
+from url_checker_tools.config.provider_config import ProviderConfigTemplate
 from url_checker_tools.core.results import ProviderResult
 from url_checker_tools.core.utils import ConfigDict
 
