@@ -5,9 +5,6 @@ SID: snap
 [INFO] Enabled providers: whois, misp, link_analyzer, whalebone, virustotal, google_sb, yara, abuseipdb
 [ERROR] abuseipdb exception details: connection refused
 RESULT: SAFE (18/100)
-[INFO] Robot logs created:
-  Synthesis: data/logs/sessions/d894cfd0d73f0ed4dae63393caa72d9f6322c1a89aa66fd083bc90e87071dfd6/<date>/snap.log
-  Detailed: data/logs/sessions/d894cfd0d73f0ed4dae63393caa72d9f6322c1a89aa66fd083bc90e87071dfd6/<date>/snap.dlog
 
 ============================================================
 HUMAN-READABLE SUMMARY

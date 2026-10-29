@@ -6,9 +6,6 @@ RESULT: SAFE (18/100)
 [INFO] Robot logs created:
   Synthesis: data/logs/sessions/d894cfd0d73f0ed4dae63393caa72d9f6322c1a89aa66fd083bc90e87071dfd6/<date>/snap.log
   Detailed: data/logs/sessions/d894cfd0d73f0ed4dae63393caa72d9f6322c1a89aa66fd083bc90e87071dfd6/<date>/snap.dlog
-[INFO] Robot logs created:
-  Synthesis: data/logs/sessions/d894cfd0d73f0ed4dae63393caa72d9f6322c1a89aa66fd083bc90e87071dfd6/<date>/snap.log
-  Detailed: data/logs/sessions/d894cfd0d73f0ed4dae63393caa72d9f6322c1a89aa66fd083bc90e87071dfd6/<date>/snap.dlog
 
 --- stderr ---
 ERROR: {"timestamp": "<ts>", "event_type": "error", "session_id": "snap", "provider": "abuseipdb", "target": "http://example.test/login", "error": "abuseipdb scan failed: connection refused", "context": {}}

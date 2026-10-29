@@ -182,7 +182,6 @@ Examples:
     def scan_direct(
         self,
         request: ScanRequest,
-        misp_reporting_enabled: bool = False,
     ) -> List[Any]:
         """Perform direct scanning with specified providers."""
         target = request.target
@@ -388,27 +387,6 @@ Examples:
             verdict = scoring_data["verdict"]
 
             print(f"RESULT: {verdict} ({score}/100)")
-
-            # Robot mode: force synthesis format with scoring for log files
-            # Skip log creation here if MISP reporting is enabled (logs will be created later with MISP data)
-            if self.logger and not misp_reporting_enabled:
-                threat_level_map = scorer.get_threat_level_mapping()
-                robot_synthesis = {
-                    "synthesis": {
-                        "threat_level": threat_level_map.get(verdict, "unknown"),
-                        "threat_score": score,
-                        "verdict": verdict,
-                        "confidence": min(1.0, score / 100.0),
-                        "providers_checked": scoring_data["provider_count"],
-                        "threats_detected": scoring_data["threat_count"],
-                        "multi_provider_agreement": scoring_data[
-                            "multi_provider_boost"
-                        ],
-                        "provider_breakdown": scoring_data["provider_breakdown"],
-                    }
-                }
-                robot_synthesis_str = json.dumps(robot_synthesis, indent=2)
-                self._create_robot_logs(request.target, results, robot_synthesis_str)
 
             # Verbose robot mode: show human-readable summary
             if request.verbose:
@@ -1014,7 +992,6 @@ Examples:
                 # Direct scanning
                 results = self.scan_direct(
                     request,
-                    misp_reporting_enabled=args.misp_report,
                 )
 
                 # MISP reporting (if enabled) - do this before output format to capture event ID
