@@ -179,6 +179,14 @@ Examples:
         if args.log or args.robot:
             self.logger = WorkflowLogger(session_id=self.session_id)
 
+    def _build_services(self, request: ScanRequest) -> ScanService:
+        """Create the output and scan services for one request."""
+        robot_logs = RobotLogBuilder(self.session_id, self.logger)
+        self.output = OutputService(
+            request, self.logger, robot_logs.write, self.registry
+        )
+        return ScanService(self.registry, self.logger, FileScanService(self.logger))
+
     def main(self) -> None:
         """Run the command-line interface."""
         parser = self.create_argument_parser()
@@ -216,57 +224,53 @@ Examples:
         # Setup logging
         self.setup_logging(args)
 
-        # Determine providers
+        # Build the request: everything below reads it instead of args
         providers = self.registry.select(args.providers, args.all, args.robot)
         request = ScanRequest.from_args(args, providers, self.session_id)
-        robot_logs = RobotLogBuilder(self.session_id, self.logger)
-        file_scans = FileScanService(self.logger)
-        self.output = OutputService(
-            request, self.logger, robot_logs.write, self.registry
-        )
+        scan_service = self._build_services(request)
 
         try:
-            if args.workflow:
+            if request.workflow:
                 # Use Celery workflow
                 orchestrator = WorkflowOrchestrator(self.session_id)
 
-                if args.workflow == "fast":
-                    workflow_id = orchestrator.scan_url_fast(args.target)
-                elif args.workflow == "reputation":
-                    workflow_id = orchestrator.scan_domain_reputation(args.target)
+                if request.workflow == "fast":
+                    workflow_id = orchestrator.scan_url_fast(request.target)
+                elif request.workflow == "reputation":
+                    workflow_id = orchestrator.scan_domain_reputation(request.target)
                 else:
-                    workflow_id = orchestrator.scan_url_complete(args.target)
+                    workflow_id = orchestrator.scan_url_complete(request.target)
 
-                if not args.robot:
-                    print(f"Started workflow {workflow_id} for {args.target}")
+                if not request.robot:
+                    print(f"Started workflow {workflow_id} for {request.target}")
                     print("Use 'celery flower' to monitor progress")
             else:
                 # Direct scanning
-                results = ScanService(self.registry, self.logger, file_scans).run(
-                    request, self.output
-                )
+                results = scan_service.run(request, self.output)
 
                 # MISP reporting (if enabled) - do this before output format to capture event ID
                 misp_data = None
-                if args.misp_report and results:
+                if request.misp_report and results:
                     misp_data = self.handle_misp_reporting(request, results)
 
                 # Handle output format (now with MISP data available)
                 self.output.render(results, misp_data=misp_data)
 
         except KeyboardInterrupt:
-            if not args.robot:
+            if not request.robot:
                 print("\nScan interrupted by user")
             sys.exit(1)
         except Exception as e:
             error_msg = f"Error: {e}"
-            if args.robot:
+            if request.robot:
                 # Log error in robot mode
                 if self.logger:
-                    self.logger.log_error(args.target or "unknown", "system", error_msg)
+                    self.logger.log_error(
+                        request.target or "unknown", "system", error_msg
+                    )
             else:
                 print(error_msg)
-            if args.verbose:
+            if request.verbose:
                 import traceback
 
                 traceback.print_exc()
