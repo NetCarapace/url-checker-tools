@@ -116,7 +116,7 @@ class ProviderConfigTemplate:
             "enabled": True,
             "url": ProviderEndpoints.MISP.value,
             "api_key": None,  # Auto-loaded from keyring/env
-            "verify_ssl": False,  # For localhost with self-signed cert
+            "verify_ssl": True,  # URLCHECKERTOOLS_MISP_VERIFYSSL=false for a self-signed local MISP
             "timeout": 60,
             "max_retries": ProviderDefaults.MAX_RETRIES.value,
             "rate_limit_per_minute": ProviderDefaults.RATE_LIMIT.value,
@@ -260,6 +260,8 @@ class ProviderConfigTemplate:
             misp_key_env = os.getenv("MISP_API_KEY") or os.getenv("MISP_KEY")
             if misp_url_env:
                 configs["misp"]["url"] = misp_url_env
+            if os.getenv("URLCHECKERTOOLS_MISP_VERIFYSSL", "").lower() == "false":
+                configs["misp"]["verify_ssl"] = False
             if misp_key_env:
                 configs["misp"]["api_key"] = misp_key_env
             else:

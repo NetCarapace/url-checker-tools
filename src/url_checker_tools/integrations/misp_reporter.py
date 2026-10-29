@@ -53,7 +53,7 @@ class MISPReporter:
                 )
                 verify = getattr(self.config, "verify_ssl", None)
                 if verify is None:
-                    verify = getattr(self.config, "verifycert", False)
+                    verify = getattr(self.config, "verifycert", True)
 
                 self._misp_client = PyMISP(
                     self.config.url,

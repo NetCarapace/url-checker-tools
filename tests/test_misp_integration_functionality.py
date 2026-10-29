@@ -520,3 +520,17 @@ class TestMISPIntegrationFunctionality:
             assert hasattr(reporter, '_verbose')
             assert hasattr(reporter, 'config')
             assert hasattr(reporter, '_logger')
+
+
+@pytest.mark.parametrize("env_value, expected", [(None, True), ("false", False)])
+def test_misp_tls_verification_default_and_opt_out(monkeypatch, env_value, expected):
+    """TLS verification is on unless URLCHECKERTOOLS_MISP_VERIFYSSL=false."""
+    from url_checker_tools.config.provider_config import ProviderConfigTemplate
+
+    if env_value is None:
+        monkeypatch.delenv("URLCHECKERTOOLS_MISP_VERIFYSSL", raising=False)
+    else:
+        monkeypatch.setenv("URLCHECKERTOOLS_MISP_VERIFYSSL", env_value)
+    misp = ProviderConfigTemplate.get_all_provider_configs()["misp"]
+    assert misp["verify_ssl"] is expected
+    assert misp["verifycert"] is expected
