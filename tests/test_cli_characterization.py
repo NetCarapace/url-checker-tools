@@ -19,6 +19,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 from url_checker_tools.cli.app import URLCheckerCLI
 from url_checker_tools.config import logging_config
 from url_checker_tools.core.results import ProviderResult, ThreatLevel
+from url_checker_tools.services.provider_registry import ProviderRegistry
 
 SNAPSHOT_DIR = Path(__file__).parent / "snapshots"
 TARGET = "http://example.test/login"
@@ -139,7 +140,7 @@ def mask(text):
 def run_cli(argv):
     """Run the CLI like the shell does and return (exit code, stdout, stderr)."""
     cli = URLCheckerCLI()
-    cli.available_providers = FAKE_PROVIDERS
+    cli.registry = ProviderRegistry(FAKE_PROVIDERS)
     with patch.object(sys, "argv", ["url-checker", *argv]):
         try:
             cli.main()
@@ -176,9 +177,9 @@ def test_robot_result_unknown_when_no_provider_ran(tmp_path, monkeypatch, capsys
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(logging_config, "_global_logger", None)
     cli = URLCheckerCLI()
-    cli.available_providers = {
-        name: fake_provider(name, available=False) for name in FAKE_PROVIDERS
-    }
+    cli.registry = ProviderRegistry(
+        {name: fake_provider(name, available=False) for name in FAKE_PROVIDERS}
+    )
     with patch.object(sys, "argv", ["url-checker", TARGET, "--robot", "--sid", "snap"]):
         cli.main()
     assert "RESULT: UNKNOWN (0/100)" in capsys.readouterr().out

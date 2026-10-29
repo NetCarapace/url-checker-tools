@@ -15,16 +15,7 @@ from typing import Any, List, Optional
 
 from url_checker_tools.config.logging_config import WorkflowLogger, set_session_id
 from url_checker_tools.output.formatters import get_formatter
-from url_checker_tools.providers.abuseipdb import AbuseIPDBProvider
-from url_checker_tools.providers.google_sb import GoogleSafeBrowsingProvider
-from url_checker_tools.providers.link_analyzer import LinkAnalyzerProvider
-from url_checker_tools.providers.lookyloo import LookyLooProvider
-from url_checker_tools.providers.misp import MISPProvider
-from url_checker_tools.providers.urlscan import URLScanProvider
-from url_checker_tools.providers.virustotal import VirusTotalProvider
-from url_checker_tools.providers.whalebone import WhaleboneProvider
-from url_checker_tools.providers.whois import WhoisProvider
-from url_checker_tools.providers.yara import YaraProvider
+from url_checker_tools.services.provider_registry import ProviderRegistry
 from url_checker_tools.services.scan_request import ScanRequest
 from url_checker_tools.workflows.orchestrator import WorkflowOrchestrator
 
@@ -34,22 +25,10 @@ class URLCheckerCLI:
 
     def __init__(self):
         """Initialize CLI with available providers."""
-        self.available_providers = {
-            "whalebone": WhaleboneProvider,
-            "virustotal": VirusTotalProvider,
-            "whois": WhoisProvider,
-            "google_sb": GoogleSafeBrowsingProvider,
-            "abuseipdb": AbuseIPDBProvider,
-            "urlscan": URLScanProvider,
-            "lookyloo": LookyLooProvider,
-            "link_analyzer": LinkAnalyzerProvider,
-            "yara": YaraProvider,
-            "misp": MISPProvider,
-        }
+        self.registry = ProviderRegistry()
 
         self.logger: Optional[WorkflowLogger] = None
         self.session_id: Optional[str] = None
-        self._available_provider_cache: Optional[List[str]] = None
 
     def create_argument_parser(self) -> argparse.ArgumentParser:
         """Create comprehensive argument parser with all legacy options."""
@@ -188,83 +167,6 @@ Examples:
 
         return parser
 
-    def get_available_providers(self, force_refresh: bool = False) -> List[str]:
-        """Get list of providers that are actually available/configured.
-
-        Uses caching to avoid repeated availability checks unless forced.
-        """
-        if self._available_provider_cache is not None and not force_refresh:
-            return self._available_provider_cache.copy()
-
-        available = []
-        for name, provider_class in self.available_providers.items():
-            try:
-                with provider_class() as provider:
-                    if provider.is_available():
-                        available.append(name)
-            except Exception:
-                # Provider failed to initialize or check availability - skip it
-                continue
-
-        self._available_provider_cache = available
-        return available.copy()
-
-    def determine_providers_from_args(self, args) -> List[str]:
-        """Determine which providers to use based on CLI arguments."""
-        providers = []
-
-        # Simple provider selection - flags accumulate, don't overwrite
-        # 1. --providers explicit list
-        # 2. --all-providers (all available)
-        # 3. --all (reliable subset)
-        # 4. Individual provider flags (accumulated)
-        # 5. Default based on robot mode or all available
-
-        # Get baseline providers (always included unless --all overrides everything)
-        try:
-            from url_checker_tools.config.robot_config import ProviderConfig
-
-            baseline_providers = ProviderConfig.get_baseline_providers()
-        except Exception:
-            baseline_providers = ["whois", "link_analyzer"]
-
-        if args.providers:
-            # Explicit provider list (comma-separated) + baseline providers
-            additional_providers = [p.strip() for p in args.providers.split(",")]
-            providers = baseline_providers + additional_providers
-        elif args.all:
-            # All actually available/configured providers (overrides baseline)
-            providers = self.get_available_providers()
-        elif args.robot:
-            # Robot mode default providers (overrides baseline)
-            try:
-                from url_checker_tools.config.robot_config import RobotModeConfig
-
-                providers = RobotModeConfig.get_robot_providers()
-            except Exception:
-                providers = [
-                    "whois",
-                    "link_analyzer",
-                    "whalebone",
-                    "virustotal",
-                    "google_sb",
-                    "yara",
-                    "abuseipdb",
-                ]
-        else:
-            # Default: only baseline providers
-            providers = baseline_providers
-
-        # Remove duplicates while preserving order
-        seen = set()
-        deduplicated_providers = []
-        for provider in providers:
-            if provider not in seen:
-                seen.add(provider)
-                deduplicated_providers.append(provider)
-
-        return deduplicated_providers
-
     def setup_logging(self, args) -> None:
         """Set up logging based on CLI arguments."""
         if args.session_id:
@@ -282,9 +184,9 @@ Examples:
         print("=" * 50)
 
         available_count = 0
-        total_count = len(self.available_providers)
+        total_count = len(self.registry.providers)
 
-        for name, provider_class in self.available_providers.items():
+        for name, provider_class in self.registry.providers.items():
             try:
                 with provider_class() as provider:
                     if provider.is_available():
@@ -361,7 +263,7 @@ Examples:
         unavailable_providers = []
         error_providers = []
 
-        for name, provider_class in self.available_providers.items():
+        for name, provider_class in self.registry.providers.items():
             print(f"\n{name.upper()}:")
             try:
                 # Use default configuration for status check
@@ -496,7 +398,7 @@ Examples:
             print(f"    - {', '.join(error_providers)}")
 
         print(
-            f"\nOverall: {len(available_providers)}/{len(self.available_providers)} providers ready"
+            f"\nOverall: {len(available_providers)}/{len(self.registry.providers)} providers ready"
         )
 
         if unavailable_providers or error_providers:
@@ -535,7 +437,7 @@ Examples:
                 # Non-verbose: show minimal scanning status
                 active_providers = []
                 for provider_name in providers:
-                    provider_class = self.available_providers.get(provider_name)
+                    provider_class = self.registry.get(provider_name)
                     if provider_class:
                         try:
                             provider = provider_class()
@@ -552,7 +454,7 @@ Examples:
 
         # Scan with each provider
         for provider_name in providers:
-            provider_class = self.available_providers.get(provider_name)
+            provider_class = self.registry.get(provider_name)
             if not provider_class:
                 if not request.robot:
                     print(f"Unknown provider: {provider_name}")
@@ -1558,7 +1460,7 @@ Examples:
         self.setup_logging(args)
 
         # Determine providers
-        providers = self.determine_providers_from_args(args)
+        providers = self.registry.select(args.providers, args.all, args.robot)
         request = ScanRequest.from_args(args, providers, self.session_id)
 
         try:
