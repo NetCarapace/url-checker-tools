@@ -120,3 +120,63 @@ python -c "import keyring; keyring.set_password('urlchecker', 'misp', 'NEW_API_K
 - SSL verification can be enabled for production
 - Events are marked as organization-only by default
 - No sensitive scan data is logged in clear text
+
+---
+
+## Local Development Testing
+
+This section describes how to run a local MISP instance for development and integration testing using the official [MISP Docker image](https://github.com/MISP/misp-docker).
+
+### Start the MISP container
+
+```bash
+docker compose -f docker/docker-compose.misp.yml up -d
+```
+
+The instance exposes two ports:
+- `https://localhost:8443` — HTTPS (self-signed certificate)
+- `http://localhost:8080` — HTTP
+
+### First-time setup
+
+On first boot MISP runs its initialisation. Wait until the container is healthy, then log in at `https://localhost:8443` with the default credentials:
+
+| Field    | Value             |
+|----------|-------------------|
+| Email    | `admin@admin.test` |
+| Password | `admin`           |
+
+You will be prompted to change the password on first login.
+
+Retrieve your automation API key at:  
+**Administration → My Profile → Auth keys**  
+(or directly at `https://localhost:8443/auth_keys/index`)
+
+### Configure the dev environment
+
+Copy the template and fill in the key:
+
+```bash
+cp .envdev.template .envdev
+```
+
+`.envdev` should contain:
+
+```bash
+MISP_URL=https://localhost:8443
+MISP_API_KEY=<your_auth_key>
+```
+
+### Run the test scan
+
+`run_eicar.sh` sources `.envdev` and runs a scan against the EICAR test URL with MISP reporting enabled:
+
+```bash
+bash run_eicar.sh
+```
+
+This will create a MISP event at `https://localhost:8443/events/index`. The YARA provider will fire on the EICAR payload even without any external API keys configured, so it provides a reliable threat signal for end-to-end testing of the reporting path.
+
+### SSL note
+
+The vanilla docker-MISP uses a self-signed certificate. `verify_ssl` is set to `False` by default in `get_misp_config()`, so no extra configuration is needed for local testing.
