@@ -244,7 +244,7 @@ url_checker/
 │       ├── run_7zip.sh                 # Test script for 7zip.com
 │       ├── run_github.sh               # Test script for github.com
 │       ├── run_miner.sh                # Test script for crypto miner
-│       └── run_sus.sh                  # Test script for suspicious content
+│       └── run_eicar.sh                # Test script for EICAR antivirus test file
 │
 ├── data/                               # Runtime data and configurations
 │   ├── logs/                       # Session-based structured logging

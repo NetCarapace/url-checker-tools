@@ -4,10 +4,10 @@ This directory contains convenient testing scripts using industry-standard test 
 
 ## Available Scripts
 
-### `run_sus.sh` - EICAR Test Virus
+### `run_eicar.sh` - EICAR Test Virus
 Tests the system with the EICAR test virus from WICAR (Web EICAR):
 ```bash
-./run_sus.sh
+./run_eicar.sh
 ```
 - **URL**: `http://malware.wicar.org/data/eicar.com`
 - **Purpose**: Industry standard malware test file
@@ -24,7 +24,7 @@ Tests with a JavaScript cryptocurrency miner:
 
 ## Recent Test Results
 
-### EICAR Test (`run_sus.sh`)
+### EICAR Test (`run_eicar.sh`)
 ```
 RESULT: SUSPICIOUS (50/100)
 ✓ whois: safe
