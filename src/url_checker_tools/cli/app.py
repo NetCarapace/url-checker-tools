@@ -221,7 +221,9 @@ Examples:
         request = ScanRequest.from_args(args, providers, self.session_id)
         robot_logs = RobotLogBuilder(self.session_id, self.logger)
         file_scans = FileScanService(self.logger)
-        self.output = OutputService(request, self.logger, robot_logs.write)
+        self.output = OutputService(
+            request, self.logger, robot_logs.write, self.registry
+        )
 
         try:
             if args.workflow:

@@ -1,9 +1,11 @@
 """CLI output: result rendering, robot summaries and provider listings."""
 
 import json
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
+from url_checker_tools.analysis.unified_scorer import UnifiedThreatScorer
 from url_checker_tools.config.logging_config import WorkflowLogger
+from url_checker_tools.core.results import ProviderResult
 from url_checker_tools.output.formatters import get_formatter
 from url_checker_tools.services.provider_registry import ProviderRegistry
 from url_checker_tools.services.scan_request import ScanRequest
@@ -17,10 +19,14 @@ class OutputService:
         request: ScanRequest,
         logger: Optional[WorkflowLogger],
         write_robot_logs: Callable,
+        registry: ProviderRegistry,
     ):
         self.request = request
         self.logger = logger
         self.write_robot_logs = write_robot_logs
+        self.registry = registry
+        self.output_format = "json" if request.raw else request.format
+        self.formatter = get_formatter(self.output_format)
 
     def render(self, results: List[Any], misp_data: dict = None) -> None:
         """Handle different output formats."""
@@ -257,6 +263,124 @@ class OutputService:
                 threat_level = getattr(result, "threat_level", None)
                 if threat_level and hasattr(threat_level, "value"):
                     print(f"   └─ Threat Level: {threat_level.value}")
+
+    # ---- Scan progress (ScanEvents) ---------------------------------------
+
+    def scan_started(self, request: ScanRequest) -> None:
+        """Print the scan header."""
+        providers = request.providers
+        target = request.target
+
+        # Robot mode output handling
+        if request.robot:
+            # Always show SID first in robot mode
+            print(f"SID: {request.session_id}")
+
+            if request.verbose:
+                print(f"[INFO] Target: {target}")
+                print(f"[INFO] Enabled providers: {', '.join(providers)}")
+            else:
+                # Non-verbose: show minimal scanning status
+                active_providers = []
+                for provider_name in providers:
+                    provider_class = self.registry.get(provider_name)
+                    if provider_class:
+                        try:
+                            with provider_class() as provider:
+                                if provider.is_available():
+                                    active_providers.append(provider_name)
+                        except Exception:
+                            pass
+                if active_providers:
+                    print(f"[SCAN] Checking: {', '.join(active_providers)}")
+        else:
+            print(f"Scanning {target}...")
+            if request.verbose:
+                print(f"[INFO] Enabled providers: {', '.join(providers)}")
+
+    def provider_unknown(self, name: str) -> None:
+        if not self.request.robot:
+            print(f"Unknown provider: {name}")
+
+    def provider_started(self, name: str) -> None:
+        if not self.request.robot:
+            print(f"Running {name}...")
+            if self.request.verbose:
+                print(f"[INFO] Starting {name} scan...")
+
+    def provider_scanning(self, name: str) -> None:
+        # In robot mode, suppress individual provider verbose messages during scanning
+        if self.request.verbose and not self.request.robot:
+            print(f"[INFO] {name} provider is available, starting scan...")
+
+    def provider_result(self, name: str, result: ProviderResult) -> None:
+        request = self.request
+        # Verbose execution details (suppress in robot mode during scanning)
+        if request.verbose and not request.robot:
+            exec_time = getattr(result, "execution_time", 0) or 0
+            print(
+                f"[INFO] {name} completed in {exec_time:.2f}s - {'Threat' if result.is_threat else 'Safe'}"
+            )
+
+        # Display result (unless in robot mode)
+        if not request.robot:
+            print(self.formatter.format_provider_result(result))
+
+    def provider_unavailable(self, name: str) -> None:
+        if not self.request.robot:
+            print(f"  {name} is not properly configured")
+        # In robot mode, suppress availability warnings during scanning
+        if self.request.verbose and not self.request.robot:
+            print(f"[WARNING] {name} provider availability check failed")
+
+    def provider_failed(self, name: str, error: Exception) -> None:
+        if not self.request.robot:
+            print(f"   {name} scan failed: {error}")
+        if self.request.verbose:
+            print(f"[ERROR] {name} exception details: {str(error)[:200]}")
+
+    def scan_finished(
+        self, results: List[ProviderResult], scoring: Dict[str, Any]
+    ) -> None:
+        """Print the summary (and score) or, in robot mode, the RESULT line."""
+        request = self.request
+
+        # Summary with optional scoring
+        if not request.robot:
+            threat_count = sum(1 for r in results if r.is_threat and not r.is_error)
+            safe_count = sum(1 for r in results if not r.is_threat and not r.is_error)
+            error_count = sum(1 for r in results if r.is_error)
+
+            print(
+                f"\nSummary: {len(results)} providers, {threat_count} threats detected"
+            )
+
+            # Scoring breakdown if requested
+            if (request.score or request.score_detail) and results:
+                scorer = UnifiedThreatScorer()
+
+                # --score-detail supersedes --score
+                if request.score_detail:
+                    print(f"\n{scorer.format_scoring_details(scoring)}")
+                else:
+                    # Basic score output - use appropriate format
+                    score_format = "json" if self.output_format == "json" else "human"
+                    print(f"\n{scorer.format_basic_score(scoring, score_format)}")
+
+            if request.verbose:
+                print("[INFO] Provider results breakdown:")
+                print(f"  - Safe: {safe_count}")
+                print(f"  - Threats: {threat_count}")
+                print(f"  - Errors: {error_count}")
+
+        # Robot mode: Add RESULT output and optional verbose summary
+        # Robot mode automatically behaves like --format synthesis --score (basic scoring, not detailed)
+        if request.robot:
+            print(f"RESULT: {scoring['verdict']} ({scoring['final_score']}/100)")
+
+            # Verbose robot mode: show human-readable summary
+            if request.verbose:
+                self.robot_verbose_summary(results, request.target)
 
     @staticmethod
     def list_providers(registry: ProviderRegistry) -> None:
