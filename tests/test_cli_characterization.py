@@ -125,6 +125,8 @@ CASES = {
     "robot": ["--robot"],
     "robot_verbose": ["--robot", "--verbose"],
     "robot_misp_report": ["--robot", "--misp-report"],
+    "list_providers": ["--list-providers"],
+    "providers_status": ["--providers-status"],
 }
 
 

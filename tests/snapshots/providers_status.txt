@@ -1,0 +1,64 @@
+exit: 0
+--- stdout ---
+Provider Status Report:
+============================================================
+
+WHOIS:
+  Status: [AVAILABLE]
+  Config: SimpleNamespace
+  Built-in WHOIS client
+
+LINK_ANALYZER:
+  Status: [AVAILABLE]
+  Config: SimpleNamespace
+
+MISP:
+  Status: [AVAILABLE]
+  Config: SimpleNamespace
+  API key: configured
+
+WHALEBONE:
+  Status: [AVAILABLE]
+  Config: SimpleNamespace
+
+VIRUSTOTAL:
+  Status: [AVAILABLE]
+  Config: SimpleNamespace
+  API key: configured
+
+YARA:
+  Status: [AVAILABLE]
+  Config: SimpleNamespace
+  Status:  Error
+  Error: 'types.SimpleNamespace' object has no attribute 'rules_dir'
+  Troubleshooting: Check provider implementation and dependencies
+
+GOOGLE_SB:
+  Status:  Not properly configured
+  Issue: Missing API key
+  Solution: Set API key via keyring or environment variable
+    - Keyring: keyring set url-checker-tools google_sb_key <your-api-key>
+    - Env var: URLCHECKER_GOOGLE_SB_API_KEY=<your-api-key>
+
+ABUSEIPDB:
+  Status: [AVAILABLE]
+  Config: SimpleNamespace
+  API key: configured
+
+============================================================
+SUMMARY:
+  Available: 6 providers
+    - whois, link_analyzer, misp, whalebone, virustotal, abuseipdb
+  Unavailable: 1 providers
+    - google_sb
+  Errors: 1 providers
+    - yara
+
+Overall: 6/8 providers ready
+
+Next steps:
+  1. Configure missing API keys for maximum threat detection coverage
+  2. Check provider documentation for setup requirements
+  3. Test with available providers using: --providers whois,link_analyzer,misp,whalebone,virustotal,abuseipdb
+
+--- stderr ---
