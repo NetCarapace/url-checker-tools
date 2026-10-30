@@ -1,5 +1,6 @@
 """Tests for the scan loop and the events it reports."""
 
+import dataclasses
 import sys
 from pathlib import Path
 
@@ -107,3 +108,31 @@ def test_file_scanning_is_reported_as_an_event():
     events = [event for event, _ in calls]
     assert events.index("download_links_checked") == len(events) - 2
     assert events[-1] == "scan_finished"
+
+
+def test_config_overrides_are_applied_to_the_matching_provider():
+    seen = {}
+
+    def recording_provider(name):
+        base = FAKE_PROVIDERS[name]
+
+        class Recording(base):
+            def scan_with_timing(self, target):
+                seen[name] = vars(self.config).copy()
+                return super().scan_with_timing(target)
+
+        return Recording
+
+    registry = ProviderRegistry({n: recording_provider(n) for n in ("yara", "whois")})
+    request = dataclasses.replace(
+        make_request(),
+        providers=("yara", "whois"),
+        yara_rules=("custom.yar",),
+        yara_timeout=5,
+        yara_max_bytes=100,
+    )
+    ScanService(registry, None, FileScanService(None)).run(request, RecordingEvents())
+
+    assert seen["yara"]["rule_paths"] == ["custom.yar"]
+    assert seen["yara"]["timeout"] == 5 and seen["yara"]["max_file_size"] == 100
+    assert "rule_paths" not in seen["whois"]

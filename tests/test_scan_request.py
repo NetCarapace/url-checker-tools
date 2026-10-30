@@ -50,3 +50,36 @@ def test_request_is_immutable():
     request = ScanRequest.from_args(parse(["example.com"]), ["whois"], "s3")
     with pytest.raises(dataclasses.FrozenInstanceError):
         request.target = "other.com"
+
+
+def test_yara_options_become_yara_config_overrides():
+    args = parse(
+        [
+            "example.com",
+            "--yara-rules",
+            "a.yar",
+            "rules/",
+            "--yara-timeout",
+            "5",
+            "--yara-max-bytes",
+            "100",
+        ]
+    )
+    request = ScanRequest.from_args(args, ["yara"], "s4")
+    assert request.config_overrides("yara") == {
+        "rule_paths": ["a.yar", "rules/"],
+        "timeout": 5,
+        "max_file_size": 100,
+    }
+    assert request.config_overrides("virustotal") == {}
+
+
+def test_yara_option_defaults_match_the_yara_provider_defaults():
+    from url_checker_tools.config.provider_config import ProviderConfigTemplate
+
+    defaults = ScanRequest.from_args(parse(["example.com"]), ["yara"], "s5")
+    config = ProviderConfigTemplate.get_yara_config()
+    overrides = defaults.config_overrides("yara")
+    assert overrides["timeout"] == config["timeout"]
+    assert overrides["max_file_size"] == config["max_file_size"]
+    assert overrides["rule_paths"] == []  # empty: the provider falls back to rules_dir

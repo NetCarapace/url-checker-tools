@@ -47,6 +47,8 @@ class ScanService:
                 # Set verbose flag for base config if possible
                 if hasattr(provider.config, "verbose"):
                     provider.config.verbose = request.verbose
+                for key, value in request.config_overrides(provider_name).items():
+                    setattr(provider.config, key, value)
 
                 with provider:
                     if provider.is_available():
