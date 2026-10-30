@@ -202,6 +202,7 @@ class OutputService:
         self.logger = logger
         self.write_robot_logs = write_robot_logs
         self.registry = registry
+        self.scoring: Optional[Dict[str, Any]] = None
         self.output_format = "json" if request.raw else request.format
         self.formatter = get_formatter(self.output_format)
 
@@ -211,12 +212,9 @@ class OutputService:
         output_str = None
         scoring_data = None
 
-        # Calculate scoring data if requested (for inclusion in logs)
+        # Scoring data if requested (for inclusion in logs), as computed by the scan
         if (request.score or request.score_detail) and results:
-            from url_checker_tools.analysis.unified_scorer import UnifiedThreatScorer
-
-            scorer = UnifiedThreatScorer()
-            scoring_data = scorer.calculate_threat_score(results)
+            scoring_data = self.scoring
 
         if request.format == "json" or request.raw or request.robot:
             # JSON output (default for robot mode)
@@ -242,18 +240,11 @@ class OutputService:
         elif request.format == "synthesis":
             # Synthesis output - only calculate scoring if --score or --score-detail flag is present
             if request.score or request.score_detail:
-                # Use pre-calculated scoring data
-                if not scoring_data:
-                    from url_checker_tools.analysis.unified_scorer import (
-                        UnifiedThreatScorer,
-                    )
-
-                    scorer = UnifiedThreatScorer()
-                    scoring_data = scorer.calculate_threat_score(results)
-
+                # Use the scoring data computed by the scan
+                scoring_data = self.scoring
                 score = scoring_data["final_score"]
                 verdict = scoring_data["verdict"]
-                threat_level_map = scorer.get_threat_level_mapping()
+                threat_level_map = UnifiedThreatScorer().get_threat_level_mapping()
 
                 synthesis = {
                     "synthesis": {
@@ -509,6 +500,7 @@ class OutputService:
     ) -> None:
         """Print the summary (and score) or, in robot mode, the RESULT line."""
         request = self.request
+        self.scoring = scoring  # reused by render()
 
         # Summary with optional scoring
         if not request.robot:
