@@ -83,7 +83,7 @@ class FileScanService:
                                                 download_urls.append(potential_url)
 
         # Remove duplicates
-        return list(set(download_urls))
+        return list(dict.fromkeys(download_urls))
 
     def _is_download_url(self, url: str) -> bool:
         """Check if URL looks like a download link."""

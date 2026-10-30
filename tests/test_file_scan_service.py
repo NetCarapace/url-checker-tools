@@ -79,3 +79,13 @@ def test_handle_returns_detected_urls_without_printing(capsys):
     )
     assert FileScanService(logger=None).handle(request, []) == [target]
     assert capsys.readouterr().out == ""
+
+
+def test_download_urls_keep_the_order_they_were_found_in():
+    service = FileScanService(logger=None)
+    target = "https://example.test/first.exe"
+    links = [f"https://example.test/{name}.zip" for name in "dcbaedcba"]
+    urls = service._extract_download_urls(
+        target, [yara_result({"download_links": links})]
+    )
+    assert urls == [target] + [f"https://example.test/{n}.zip" for n in "dcbae"]
