@@ -3,9 +3,206 @@
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from url_checker_tools.config.logging_config import WorkflowLogger
+
+Summary = Tuple[Optional[str], Dict[str, Any]]
+
+
+# Provider-specific synthesis summaries: each returns (summary text or None, named log sections)
+
+WHOIS_DATE_FORMATS = [
+    "%Y-%m-%dT%H:%M:%SZ",
+    "%Y-%m-%dT%H:%M:%S%z",
+    "%Y-%m-%d %H:%M:%S%z",
+    "%Y-%m-%d %H:%M:%S",
+    "%Y-%m-%d",
+    "%d-%b-%Y",
+    "%d-%b-%Y %H:%M:%S %Z",
+    "%Y.%m.%d %H:%M:%S",
+    "%Y.%m.%d",
+    "%Y/%m/%d",
+    "%d.%m.%Y",
+]
+
+
+def _whois_age_days(details: dict) -> Optional[int]:
+    age_days = details.get("domain_age_days")
+    # Fallback: compute age if provider did not populate it
+    if (age_days is None or age_days == 0) and details.get("creation_date"):
+        creation_str = details.get("creation_date")
+        # Try several formats commonly seen in WHOIS
+        dt = None
+        for part in [
+            p.strip() for p in str(creation_str).replace("\t", " ").split(",")
+        ]:
+            for fmt in WHOIS_DATE_FORMATS:
+                try:
+                    dt = datetime.strptime(part, fmt)
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=timezone.utc)
+                    break
+                except Exception:
+                    continue
+            if dt:
+                break
+        if dt:
+            delta = datetime.now(timezone.utc) - dt.astimezone(timezone.utc)
+            age_days = max(0, delta.days)
+        else:
+            age_days = 0
+    return age_days
+
+
+def _summarize_whois(result, details: dict) -> Summary:
+    if not details:
+        return None, {}
+    age_days = _whois_age_days(details)
+    whois_info = {
+        "is_active": details.get("is_active", True),
+        "age": age_days or 0,
+        "domain": details.get("domain_name", ""),
+        "status": details.get("status", "active"),
+    }
+    summary = (
+        f"Age: {age_days or 0} days; Registrar: {details.get('registrar', 'Unknown')}"
+    )
+    return summary, {"whois": whois_info}
+
+
+def _summarize_virustotal(result, details: dict) -> Summary:
+    if not details:
+        return None, {}
+    malicious = details.get("malicious_count", 0)
+    total = details.get("total_engines", 0)
+    base = (
+        f"Malicious ({malicious}/{total})"
+        if malicious > 0
+        else f"Harmless ({total - malicious} clean engines)"
+    )
+    # Append categories if available
+    cats = details.get("categories") or details.get("categories_vt") or []
+    if isinstance(cats, list) and cats:
+        seen_c = set()
+        unique_cats = []
+        for c in cats:
+            if isinstance(c, str):
+                cn = c.strip().lower()
+                if cn and cn not in seen_c:
+                    seen_c.add(cn)
+                    unique_cats.append(cn)
+        if unique_cats:
+            base = f"{base} | Categories: {', '.join(unique_cats)}"
+    return base, {}
+
+
+def _summarize_whalebone(result, details: dict) -> Summary:
+    if not details:
+        return "Clean", {}
+    threat_types = details.get("threat_types", []) or []
+    # Deduplicate categories and limit length for readability
+    categories = details.get("categories", []) or []
+    unique_categories = []
+    seen_cat = set()
+    for c in categories:
+        if isinstance(c, str) and c not in seen_cat:
+            unique_categories.append(c)
+            seen_cat.add(c)
+    max_acc = details.get("max_accuracy", 0)
+
+    # Determine base verdict text
+    if result.is_threat:
+        level = getattr(result.threat_level, "value", "suspicious")
+        base = "Malicious" if level in ["malicious", "critical"] else "Suspicious"
+    else:
+        base = "Clean"
+
+    parts = [base]
+    if threat_types:
+        parts.append(f"Threats: {', '.join(threat_types)} (max {max_acc}%)")
+    if unique_categories:
+        parts.append(f"Categories: {', '.join(unique_categories)}")
+    return " | ".join(parts), {}
+
+
+def _summarize_misp(result, details: dict) -> Summary:
+    events_found = details.get("events_found", 0) if isinstance(details, dict) else 0
+    if result.is_threat and events_found:
+        return f"Threats Found ({events_found} events)", {}
+    return "Clean", {}
+
+
+def _summarize_google_sb(result, details: dict) -> Summary:
+    return ("Malicious" if result.is_threat else "Safe"), {}
+
+
+def _summarize_link_analyzer(result, details: dict) -> Summary:
+    if not details:
+        return None, {}
+    redirects = details.get("redirect_count", 0)
+    link_analysis = {
+        "redirects": redirects,
+        "domain_change": details.get("domain_changed", False),
+        "is_blocked": details.get("is_blocked", False),
+        "final_url": details.get("final_url", ""),
+        "dns_resolved": bool(details.get("resolved_ips")),
+        "security_downgrades": 0,
+        "contains_shorteners": details.get("contains_shorteners", False),
+        "suspicious_patterns": [],
+    }
+    # Include verdict in providers summary for clarity
+    tl_val = getattr(getattr(result, "threat_level", None), "value", "safe")
+    if tl_val in ["malicious", "critical"]:
+        la_verdict = "Malicious"
+    elif tl_val == "suspicious":
+        la_verdict = "Suspicious"
+    elif tl_val == "error":
+        la_verdict = "Error"
+    else:
+        la_verdict = "Safe"
+    extras = [f"{redirects} redirect(s)"]
+    if details.get("domain_changed", False):
+        extras.append("domain change: yes")
+    return f"{la_verdict} | " + " | ".join(extras), {"link_analysis": link_analysis}
+
+
+def _summarize_yara(result, details: dict) -> Summary:
+    yara_info = {
+        "type": "clean" if not result.is_threat else "threat",
+        "redirects": 0,
+        "url_shorteners": 0,
+        "domain_change": None,
+        "security_downgrades": 0,
+        "download_links": 0,
+        "flags": [],
+    }
+    summary = details.get("scan_summary", "No pattern matches") if details else None
+    return summary, {"yara": yara_info}
+
+
+def _summarize_abuseipdb(result, details: dict) -> Summary:
+    if not details:
+        return None, {}
+    confidence = details.get(
+        "abuse_confidence", details.get("abuseConfidencePercentage", 0)
+    )
+    reports = details.get("report_count", details.get("totalReports", 0))
+    if result.is_threat and confidence:
+        return f"High Risk ({confidence}%)", {}
+    return f"Low Risk ({reports} reports)", {}
+
+
+SYNTHESIS_SUMMARIES: Dict[str, Callable[[Any, dict], Summary]] = {
+    "whois": _summarize_whois,
+    "virustotal": _summarize_virustotal,
+    "whalebone": _summarize_whalebone,
+    "misp": _summarize_misp,
+    "google_sb": _summarize_google_sb,
+    "link_analyzer": _summarize_link_analyzer,
+    "yara": _summarize_yara,
+    "abuseipdb": _summarize_abuseipdb,
+}
 
 
 class RobotLogBuilder:
@@ -222,20 +419,14 @@ class RobotLogBuilder:
         self, results: List[Any], existing_synthesis: dict
     ) -> dict:
         """Create enhanced synthesis content with provider breakdown and scoring."""
-        # Start with existing synthesis or create basic structure
-        synthesis = existing_synthesis.copy() if existing_synthesis else {}
-
         # Use unified scoring system for consistency with CLI display
         from url_checker_tools.analysis.unified_scorer import UnifiedThreatScorer
 
-        scorer = UnifiedThreatScorer()
-        scoring_data = scorer.calculate_threat_score(results)
+        scoring_data = UnifiedThreatScorer().calculate_threat_score(results)
 
         # Add comprehensive provider breakdown
         providers_summary = {}
-        whois_info = {}
-        link_analysis = {}
-        yara_info = {}
+        sections = {"whois": {}, "link_analysis": {}, "yara": {}}
         metadata_analysis = {
             "behavioral_anomalies": [],
             "risk_indicators": [],
@@ -243,17 +434,11 @@ class RobotLogBuilder:
             "cross_validation_status": "medium_consistency",
         }
 
-        # Process each provider result
-        threat_count = 0
-        total_providers = len([r for r in results if hasattr(r, "provider")])
-
         for result in results:
             if not hasattr(result, "provider"):
                 continue
 
             provider = result.provider.lower()
-            is_threat = getattr(result, "is_threat", False)
-            details = getattr(result, "details", {})
 
             # Providers that did not run get no verdict and no provider-specific section
             if result.is_error:
@@ -262,238 +447,39 @@ class RobotLogBuilder:
                 )
                 continue
 
-            if is_threat:
-                threat_count += 1
-
             # Provider-specific synthesis
-            if provider == "whois":
-                if details:
-                    age_days = details.get("domain_age_days")
-                    # Fallback: compute age if provider did not populate it
-                    if (age_days is None or age_days == 0) and details.get(
-                        "creation_date"
-                    ):
-                        from datetime import datetime, timezone
-
-                        creation_str = details.get("creation_date")
-                        # Try several formats commonly seen in WHOIS
-                        fmts = [
-                            "%Y-%m-%dT%H:%M:%SZ",
-                            "%Y-%m-%dT%H:%M:%S%z",
-                            "%Y-%m-%d %H:%M:%S%z",
-                            "%Y-%m-%d %H:%M:%S",
-                            "%Y-%m-%d",
-                            "%d-%b-%Y",
-                            "%d-%b-%Y %H:%M:%S %Z",
-                            "%Y.%m.%d %H:%M:%S",
-                            "%Y.%m.%d",
-                            "%Y/%m/%d",
-                            "%d.%m.%Y",
-                        ]
-                        dt = None
-                        for part in [
-                            p.strip()
-                            for p in str(creation_str).replace("\t", " ").split(",")
-                        ]:
-                            for fmt in fmts:
-                                try:
-                                    dt = datetime.strptime(part, fmt)
-                                    if dt.tzinfo is None:
-                                        dt = dt.replace(tzinfo=timezone.utc)
-                                    break
-                                except Exception:
-                                    continue
-                            if dt:
-                                break
-                        if dt:
-                            delta = datetime.now(timezone.utc) - dt.astimezone(
-                                timezone.utc
-                            )
-                            age_days = max(0, delta.days)
-                        else:
-                            age_days = 0
-                    whois_info = {
-                        "is_active": details.get("is_active", True),
-                        "age": age_days or 0,
-                        "domain": details.get("domain_name", ""),
-                        "status": details.get("status", "active"),
-                    }
-                    providers_summary["whois"] = (
-                        f"Age: {age_days or 0} days; Registrar: {details.get('registrar', 'Unknown')}"
-                    )
-
-            elif provider == "virustotal":
-                if details:
-                    malicious = details.get("malicious_count", 0)
-                    total = details.get("total_engines", 0)
-                    base = (
-                        f"Malicious ({malicious}/{total})"
-                        if malicious > 0
-                        else f"Harmless ({total - malicious} clean engines)"
-                    )
-                    # Append categories if available
-                    cats = (
-                        details.get("categories") or details.get("categories_vt") or []
-                    )
-                    if isinstance(cats, list) and cats:
-                        seen_c = set()
-                        unique_cats = []
-                        for c in cats:
-                            if isinstance(c, str):
-                                cn = c.strip().lower()
-                                if cn and cn not in seen_c:
-                                    seen_c.add(cn)
-                                    unique_cats.append(cn)
-                        if unique_cats:
-                            base = f"{base} | Categories: {', '.join(unique_cats)}"
-                    providers_summary["virustotal"] = base
-
-            elif provider == "whalebone":
-                if details:
-                    threat_types = details.get("threat_types", []) or []
-                    # Deduplicate categories and limit length for readability
-                    categories = details.get("categories", []) or []
-                    unique_categories = []
-                    seen_cat = set()
-                    for c in categories:
-                        if isinstance(c, str) and c not in seen_cat:
-                            unique_categories.append(c)
-                            seen_cat.add(c)
-                    max_acc = details.get("max_accuracy", 0)
-
-                    # Determine base verdict text
-                    if is_threat:
-                        level = (
-                            getattr(result.threat_level, "value", "suspicious")
-                            if hasattr(result, "threat_level")
-                            else "suspicious"
-                        )
-                        base = (
-                            "Malicious"
-                            if level in ["malicious", "critical"]
-                            else "Suspicious"
-                        )
-                    else:
-                        base = "Clean"
-
-                    parts = [base]
-                    if threat_types:
-                        parts.append(
-                            f"Threats: {', '.join(threat_types)} (max {max_acc}%)"
-                        )
-                    if unique_categories:
-                        parts.append(f"Categories: {', '.join(unique_categories)}")
-
-                    providers_summary["whalebone"] = " | ".join(parts)
-                else:
-                    providers_summary["whalebone"] = "Clean"
-
-            elif provider == "misp":
-                # Include MISP summary in synthesis
-                events_found = 0
-                if isinstance(details, dict):
-                    events_found = details.get("events_found", 0)
-                if is_threat and events_found:
-                    providers_summary["misp"] = f"Threats Found ({events_found} events)"
-                else:
-                    providers_summary["misp"] = "Clean"
-
-            elif provider == "google_sb":
-                providers_summary["google_sb"] = "Malicious" if is_threat else "Safe"
-
-            elif provider == "link_analyzer":
-                if details:
-                    redirects = details.get("redirect_count", 0)
-                    final_url = details.get("final_url", "")
-                    link_analysis = {
-                        "redirects": redirects,
-                        "domain_change": details.get("domain_changed", False),
-                        "is_blocked": details.get("is_blocked", False),
-                        "final_url": final_url,
-                        "dns_resolved": bool(details.get("resolved_ips")),
-                        "security_downgrades": 0,
-                        "contains_shorteners": details.get(
-                            "contains_shorteners", False
-                        ),
-                        "suspicious_patterns": [],
-                    }
-                    # Include verdict in providers summary for clarity
-                    tl_val = getattr(
-                        getattr(result, "threat_level", None), "value", "safe"
-                    )
-                    if tl_val in ["malicious", "critical"]:
-                        la_verdict = "Malicious"
-                    elif tl_val == "suspicious":
-                        la_verdict = "Suspicious"
-                    elif tl_val == "error":
-                        la_verdict = "Error"
-                    else:
-                        la_verdict = "Safe"
-                    dom_change = details.get("domain_changed", False)
-                    extras = []
-                    extras.append(f"{redirects} redirect(s)")
-                    if dom_change:
-                        extras.append("domain change: yes")
-                    providers_summary["link_analyzer"] = (
-                        f"{la_verdict} | " + " | ".join(extras)
-                    )
-
-            elif provider == "yara":
-                yara_info = {
-                    "type": "clean" if not is_threat else "threat",
-                    "redirects": 0,
-                    "url_shorteners": 0,
-                    "domain_change": None,
-                    "security_downgrades": 0,
-                    "download_links": 0,
-                    "flags": [],
-                }
-                if details:
-                    patterns = details.get("scan_summary", "No pattern matches")
-                    providers_summary["yara"] = patterns
-
-            elif provider in ["abuseipdb", "abuse_ip_db"]:
-                if details:
-                    confidence = details.get(
-                        "abuse_confidence", details.get("abuseConfidencePercentage", 0)
-                    )
-                    reports = details.get(
-                        "report_count", details.get("totalReports", 0)
-                    )
-                    providers_summary["abuseipdb"] = (
-                        f"High Risk ({confidence}%)"
-                        if is_threat and confidence
-                        else f"Low Risk ({reports} reports)"
-                    )
+            summarize = SYNTHESIS_SUMMARIES.get(provider)
+            if summarize:
+                summary, provider_sections = summarize(
+                    result, getattr(result, "details", {})
+                )
+                sections.update(provider_sections)
+                if summary is not None:
+                    providers_summary[provider] = summary
 
             # Ensure every provider has an entry even if no provider-specific summary was set
             if provider not in providers_summary:
-                if getattr(result, "is_error", False):
-                    providers_summary[provider] = "Error"
-                else:
-                    providers_summary[provider] = "Malicious" if is_threat else "Safe"
-
-        # Use unified scoring data for consistency
-        threat_score = scoring_data["final_score"]
-        verdict = scoring_data["verdict"]
+                providers_summary[provider] = (
+                    "Malicious" if result.is_threat else "Safe"
+                )
 
         # Build comprehensive synthesis
         enhanced = {
-            "whois": whois_info,
+            "whois": sections["whois"],
             "providers": providers_summary,
             "metadata_analysis": metadata_analysis,
         }
 
         # Add conditional sections first
-        if link_analysis:
-            enhanced["link_analysis"] = link_analysis
-        if yara_info:
-            enhanced["yara"] = yara_info
+        if sections["link_analysis"]:
+            enhanced["link_analysis"] = sections["link_analysis"]
+        if sections["yara"]:
+            enhanced["yara"] = sections["yara"]
 
         # Always add result section LAST to ensure proper ordering in logs
         enhanced["result"] = {
-            "verdict": verdict,
-            "threat_score": threat_score,
+            "verdict": scoring_data["verdict"],
+            "threat_score": scoring_data["final_score"],
             "metadata_confidence": 0.7,
             "cross_validation_status": "medium_consistency",
         }
