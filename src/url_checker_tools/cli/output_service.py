@@ -7,8 +7,75 @@ from url_checker_tools.analysis.unified_scorer import UnifiedThreatScorer
 from url_checker_tools.config.logging_config import WorkflowLogger
 from url_checker_tools.core.results import ProviderResult
 from url_checker_tools.output.formatters import get_formatter
+from url_checker_tools.services.provider_details import unique_categories
 from url_checker_tools.services.provider_registry import ProviderRegistry
 from url_checker_tools.services.scan_request import ScanRequest
+
+# Provider-specific detail appended to the robot verbose summary status
+
+
+def _describe_virustotal(status: str, details: Dict[str, Any]) -> str:
+    malicious_count = details.get("malicious_count", 0)
+    total_count = details.get("total_engines", 0)
+    if malicious_count > 0:
+        status = f"malicious ({malicious_count}/{total_count} vendors)"
+    elif total_count > 0:
+        status = f"safe ({total_count - malicious_count} clean vendors)"
+    # Append VT categories/tags if available
+    unique_cats = unique_categories(details)
+    if unique_cats:
+        status = f"{status} (categories: {', '.join(unique_cats)})"
+    return status
+
+
+def _describe_whalebone(status: str, details: Dict[str, Any]) -> str:
+    # Include threat types (deduped) and max accuracy, plus categories and classification
+    threat_types = details.get("threat_types", []) or []
+    max_acc = details.get("max_accuracy", details.get("accuracy", 0)) or 0
+    categories = details.get("categories", []) or []
+    cls = (
+        details.get("category_classification", {}) if isinstance(details, dict) else {}
+    )
+
+    if threat_types:
+        types_str = ", ".join(
+            sorted(set([t for t in threat_types if isinstance(t, str)]))
+        )
+        status = f"{status} (threats: {types_str} (max {int(max_acc)}%))"
+
+    if categories:
+        category_str = ", ".join(
+            sorted(set([c for c in categories if isinstance(c, str)]))
+        )
+        status = f"{status} (categories: {category_str})"
+    # Display classification groups compactly if available
+    if isinstance(cls, dict) and any(
+        cls.get(k) for k in ["security", "policy", "safe", "unknown"]
+    ):
+        parts = []
+        for grp in ["security", "policy", "safe", "unknown"]:
+            vals = cls.get(grp) or []
+            if isinstance(vals, list) and vals:
+                parts.append(
+                    f"{grp}:{len(set([v for v in vals if isinstance(v, str)]))}"
+                )
+        if parts:
+            status = f"{status} [classification: {'; '.join(parts)}]"
+    return status
+
+
+def _describe_misp(status: str, details: Dict[str, Any]) -> str:
+    events_found = details.get("events_found", 0)
+    if events_found > 0:
+        status = f"{status} ({events_found} events found)"
+    return status
+
+
+VERBOSE_DETAILS: Dict[str, Callable[[str, Dict[str, Any]], str]] = {
+    "virustotal": _describe_virustotal,
+    "whalebone": _describe_whalebone,
+    "misp": _describe_misp,
+}
 
 
 class OutputService:
@@ -186,89 +253,9 @@ class OutputService:
                 status = "safe"
 
             # Enhanced status display for specific providers
-            if (
-                provider_name == "virustotal"
-                and hasattr(result, "details")
-                and result.details
-            ):
-                malicious_count = result.details.get("malicious_count", 0)
-                total_count = result.details.get("total_engines", 0)
-                if malicious_count > 0:
-                    status = f"malicious ({malicious_count}/{total_count} vendors)"
-                elif total_count > 0:
-                    status = f"safe ({total_count - malicious_count} clean vendors)"
-                # Append VT categories/tags if available
-                cats = (
-                    result.details.get("categories")
-                    or result.details.get("categories_vt")
-                    or []
-                )
-                if isinstance(cats, list) and cats:
-                    # Deduplicate while preserving order
-                    seen_c = set()
-                    unique_cats = []
-                    for c in cats:
-                        if isinstance(c, str):
-                            cn = c.strip().lower()
-                            if cn and cn not in seen_c:
-                                seen_c.add(cn)
-                                unique_cats.append(cn)
-                    if unique_cats:
-                        status = f"{status} (categories: {', '.join(unique_cats)})"
-
-            elif (
-                provider_name == "whalebone"
-                and hasattr(result, "details")
-                and result.details
-            ):
-                # Include threat types (deduped) and max accuracy, plus categories and classification
-                threat_types = result.details.get("threat_types", []) or []
-                max_acc = (
-                    result.details.get(
-                        "max_accuracy", result.details.get("accuracy", 0)
-                    )
-                    or 0
-                )
-                categories = result.details.get("categories", []) or []
-                cls = (
-                    result.details.get("category_classification", {})
-                    if isinstance(result.details, dict)
-                    else {}
-                )
-
-                if threat_types:
-                    types_str = ", ".join(
-                        sorted(set([t for t in threat_types if isinstance(t, str)]))
-                    )
-                    status = f"{status} (threats: {types_str} (max {int(max_acc)}%))"
-
-                if categories:
-                    category_str = ", ".join(
-                        sorted(set([c for c in categories if isinstance(c, str)]))
-                    )
-                    status = f"{status} (categories: {category_str})"
-                # Display classification groups compactly if available
-                if isinstance(cls, dict) and any(
-                    cls.get(k) for k in ["security", "policy", "safe", "unknown"]
-                ):
-                    parts = []
-                    for grp in ["security", "policy", "safe", "unknown"]:
-                        vals = cls.get(grp) or []
-                        if isinstance(vals, list) and vals:
-                            parts.append(
-                                f"{grp}:{len(set([v for v in vals if isinstance(v, str)]))}"
-                            )
-                    if parts:
-                        status = f"{status} [classification: {'; '.join(parts)}]"
-
-            elif (
-                provider_name == "misp"
-                and hasattr(result, "details")
-                and result.details
-            ):
-                events_found = result.details.get("events_found", 0)
-                if events_found > 0:
-                    status = f"{status} ({events_found} events found)"
+            describe = VERBOSE_DETAILS.get(provider_name)
+            if describe and hasattr(result, "details") and result.details:
+                status = describe(status, result.details)
 
             print(f"{status_icon} {provider_name}: {status}")
 

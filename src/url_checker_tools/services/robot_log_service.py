@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from url_checker_tools.config.logging_config import WorkflowLogger
+from url_checker_tools.services.provider_details import unique_categories
 
 Summary = Tuple[Optional[str], Dict[str, Any]]
 
@@ -82,18 +83,9 @@ def _summarize_virustotal(result, details: dict) -> Summary:
         else f"Harmless ({total - malicious} clean engines)"
     )
     # Append categories if available
-    cats = details.get("categories") or details.get("categories_vt") or []
-    if isinstance(cats, list) and cats:
-        seen_c = set()
-        unique_cats = []
-        for c in cats:
-            if isinstance(c, str):
-                cn = c.strip().lower()
-                if cn and cn not in seen_c:
-                    seen_c.add(cn)
-                    unique_cats.append(cn)
-        if unique_cats:
-            base = f"{base} | Categories: {', '.join(unique_cats)}"
+    unique_cats = unique_categories(details)
+    if unique_cats:
+        base = f"{base} | Categories: {', '.join(unique_cats)}"
     return base, {}
 
 
