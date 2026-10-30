@@ -78,6 +78,107 @@ VERBOSE_DETAILS: Dict[str, Callable[[str, Dict[str, Any]], str]] = {
 }
 
 
+# Provider listing hints (--list-providers / --providers-status)
+
+API_KEY_PROVIDERS = ["virustotal", "whalebone", "urlscan", "google_sb", "abuseipdb"]
+
+AVAILABLE_HINTS = {
+    **{name: " (API key configured)" for name in API_KEY_PROVIDERS + ["misp"]},
+    "lookyloo": " (no API key required)",
+    "whois": " (built-in functionality)",
+}
+
+UNAVAILABLE_HINTS = {
+    **{name: " (missing API key)" for name in API_KEY_PROVIDERS},
+    "yara": " (no YARA rules found)",
+    "misp": " (missing MISP configuration)",
+}
+
+
+def _yara_rules_hint(config) -> str:
+    if hasattr(config, "rule_paths") and config.rule_paths:
+        return f" (custom rules: {len(config.rule_paths)})"
+    if hasattr(config, "rules_dir"):
+        return f" (rules dir: {config.rules_dir})"
+    return ""
+
+
+def _status_yara(name: str, config) -> None:
+    if hasattr(config, "rule_paths") and config.rule_paths:
+        print(f"  Custom rules: {len(config.rule_paths)} paths")
+        for i, path in enumerate(config.rule_paths[:3], 1):
+            print(f"    {i}. {path}")
+        if len(config.rule_paths) > 3:
+            print(f"    ... and {len(config.rule_paths) - 3} more")
+    else:
+        print(f"  Rules directory: {config.rules_dir}")
+    print(f"  Max file size: {config.max_file_size / (1024*1024):.1f} MB")
+    print(f"  Scan timeout: {config.scan_timeout}s")
+
+
+def _status_whalebone(name: str, config) -> None:
+    if hasattr(config, "endpoint"):
+        print(f"  Endpoint: {config.endpoint}")
+    if hasattr(config, "min_threat_accuracy"):
+        print(f"  Min threat accuracy: {config.min_threat_accuracy}%")
+
+
+def _status_whois(name: str, config) -> None:
+    print("  Built-in WHOIS client")
+
+
+def _status_lookyloo(name: str, config) -> None:
+    print("  Public service (no API key required)")
+    if hasattr(config, "endpoint"):
+        print(f"  Endpoint: {config.endpoint}")
+
+
+def _status_api_key(name: str, config) -> None:
+    print("  API key: configured")
+    if hasattr(config, "endpoint"):
+        print(f"  Endpoint: {config.endpoint}")
+    if hasattr(config, "rate_limit_per_minute"):
+        print(f"  Rate limit: {config.rate_limit_per_minute}/min")
+
+
+STATUS_DETAILS: Dict[str, Callable[[str, Any], None]] = {
+    "yara": _status_yara,
+    "whalebone": _status_whalebone,
+    "whois": _status_whois,
+    "lookyloo": _status_lookyloo,
+    **{
+        name: _status_api_key
+        for name in ["virustotal", "urlscan", "google_sb", "abuseipdb", "misp"]
+    },
+}
+
+
+def _help_missing_api_key(name: str, config) -> None:
+    print("  Issue: Missing API key")
+    print("  Solution: Set API key via keyring or environment variable")
+    print(f"    - Keyring: keyring set url-checker-tools {name}_key <your-api-key>")
+    print(f"    - Env var: URLCHECKER_{name.upper()}_API_KEY=<your-api-key>")
+
+
+def _help_yara(name: str, config) -> None:
+    print("  Issue: No YARA rules found")
+    print("  Solution: Add .yar files to 'rules/' directory or use --yara-rules")
+    if hasattr(config, "rules_dir"):
+        print(f"  Current rules directory: {config.rules_dir}")
+
+
+def _help_misp(name: str, config) -> None:
+    print("  Issue: MISP configuration missing")
+    print("  Solution: Configure MISP server URL and API key")
+
+
+TROUBLESHOOTING: Dict[str, Callable[[str, Any], None]] = {
+    **{name: _help_missing_api_key for name in API_KEY_PROVIDERS},
+    "yara": _help_yara,
+    "misp": _help_misp,
+}
+
+
 class OutputService:
     """Renders scan results and provider information for the command line."""
 
@@ -455,47 +556,15 @@ class OutputService:
 
                         # Show provider-specific info
                         if name == "yara":
-                            rules_info = ""
-                            if (
-                                hasattr(provider.config, "rule_paths")
-                                and provider.config.rule_paths
-                            ):
-                                rules_info = f" (custom rules: {len(provider.config.rule_paths)})"
-                            elif hasattr(provider.config, "rules_dir"):
-                                rules_info = (
-                                    f" (rules dir: {provider.config.rules_dir})"
-                                )
-                            status += rules_info
-                        elif name in [
-                            "virustotal",
-                            "whalebone",
-                            "urlscan",
-                            "google_sb",
-                            "abuseipdb",
-                            "misp",
-                        ]:
-                            status += " (API key configured)"
-                        elif name == "lookyloo":
-                            status += " (no API key required)"
-                        elif name == "whois":
-                            status += " (built-in functionality)"
+                            status += _yara_rules_hint(provider.config)
+                        else:
+                            status += AVAILABLE_HINTS.get(name, "")
 
                     else:
                         status = " Not configured"
 
                         # Provide helpful configuration hints
-                        if name in [
-                            "virustotal",
-                            "whalebone",
-                            "urlscan",
-                            "google_sb",
-                            "abuseipdb",
-                        ]:
-                            status += " (missing API key)"
-                        elif name == "yara":
-                            status += " (no YARA rules found)"
-                        elif name == "misp":
-                            status += " (missing MISP configuration)"
+                        status += UNAVAILABLE_HINTS.get(name, "")
 
             except Exception as e:
                 status = f" Error: {str(e)[:50]}"
@@ -541,59 +610,9 @@ class OutputService:
                             print(f"  Max retries: {provider.config.max_retries}")
 
                         # Provider-specific details
-                        if name == "yara":
-                            if (
-                                hasattr(provider.config, "rule_paths")
-                                and provider.config.rule_paths
-                            ):
-                                print(
-                                    f"  Custom rules: {len(provider.config.rule_paths)} paths"
-                                )
-                                for i, path in enumerate(
-                                    provider.config.rule_paths[:3], 1
-                                ):
-                                    print(f"    {i}. {path}")
-                                if len(provider.config.rule_paths) > 3:
-                                    print(
-                                        f"    ... and {len(provider.config.rule_paths) - 3} more"
-                                    )
-                            else:
-                                print(f"  Rules directory: {provider.config.rules_dir}")
-                            print(
-                                f"  Max file size: {provider.config.max_file_size / (1024*1024):.1f} MB"
-                            )
-                            print(f"  Scan timeout: {provider.config.scan_timeout}s")
-
-                        elif name == "whalebone":
-                            if hasattr(provider.config, "endpoint"):
-                                print(f"  Endpoint: {provider.config.endpoint}")
-                            if hasattr(provider.config, "min_threat_accuracy"):
-                                print(
-                                    f"  Min threat accuracy: {provider.config.min_threat_accuracy}%"
-                                )
-
-                        elif name == "whois":
-                            print("  Built-in WHOIS client")
-
-                        elif name == "lookyloo":
-                            print("  Public service (no API key required)")
-                            if hasattr(provider.config, "endpoint"):
-                                print(f"  Endpoint: {provider.config.endpoint}")
-
-                        elif name in [
-                            "virustotal",
-                            "urlscan",
-                            "google_sb",
-                            "abuseipdb",
-                            "misp",
-                        ]:
-                            print("  API key: configured")
-                            if hasattr(provider.config, "endpoint"):
-                                print(f"  Endpoint: {provider.config.endpoint}")
-                            if hasattr(provider.config, "rate_limit_per_minute"):
-                                print(
-                                    f"  Rate limit: {provider.config.rate_limit_per_minute}/min"
-                                )
+                        show_details = STATUS_DETAILS.get(name)
+                        if show_details:
+                            show_details(name, provider.config)
 
                         available_providers.append(name)
 
@@ -601,37 +620,9 @@ class OutputService:
                         print("  Status:  Not properly configured")
 
                         # Detailed troubleshooting information
-                        if name in [
-                            "virustotal",
-                            "whalebone",
-                            "urlscan",
-                            "google_sb",
-                            "abuseipdb",
-                        ]:
-                            print("  Issue: Missing API key")
-                            print(
-                                "  Solution: Set API key via keyring or environment variable"
-                            )
-                            print(
-                                f"    - Keyring: keyring set url-checker-tools {name}_key <your-api-key>"
-                            )
-                            print(
-                                f"    - Env var: URLCHECKER_{name.upper()}_API_KEY=<your-api-key>"
-                            )
-
-                        elif name == "yara":
-                            print("  Issue: No YARA rules found")
-                            print(
-                                "  Solution: Add .yar files to 'rules/' directory or use --yara-rules"
-                            )
-                            if hasattr(provider.config, "rules_dir"):
-                                print(
-                                    f"  Current rules directory: {provider.config.rules_dir}"
-                                )
-
-                        elif name == "misp":
-                            print("  Issue: MISP configuration missing")
-                            print("  Solution: Configure MISP server URL and API key")
+                        show_help = TROUBLESHOOTING.get(name)
+                        if show_help:
+                            show_help(name, provider.config)
 
                         unavailable_providers.append(name)
 
