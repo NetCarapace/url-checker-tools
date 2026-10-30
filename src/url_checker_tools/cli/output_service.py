@@ -217,7 +217,7 @@ class OutputService:
             scoring_data = self.scoring
 
         if request.format == "json" or request.raw or request.robot:
-            # JSON output (default for robot mode)
+            # JSON output (default for robot mode; robot mode never reaches the branches below)
             json_output = {
                 "session_id": request.session_id,
                 "results": [
@@ -278,12 +278,7 @@ class OutputService:
                     }
                 }
             output_str = json.dumps(synthesis, indent=2)
-            if not request.robot:
-                print(output_str)
-
-            # Create dual logs for robot mode
-            if request.robot and self.logger:
-                self._write_robot_logs(request.target, results, output_str, misp_data)
+            print(output_str)
 
         elif request.format == "human":
             # Human-readable output - capture for logging if needed
@@ -296,7 +291,7 @@ class OutputService:
                     human_lines.append(formatted_result)
 
             # If logging enabled, format human output for log file
-            if request.log and self.logger and not request.robot:
+            if request.log and self.logger:
                 output_str = "\n".join(human_lines)
 
         # Create single log file for --log mode (not robot mode)
