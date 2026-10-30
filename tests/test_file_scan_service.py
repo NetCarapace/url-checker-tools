@@ -1,0 +1,91 @@
+"""Tests for download link detection in file scanning."""
+
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+from url_checker_tools.core.results import ProviderResult, ThreatLevel
+from url_checker_tools.services.file_scan_service import FileScanService
+from url_checker_tools.services.scan_request import ScanRequest
+
+
+def yara_result(details):
+    return ProviderResult(
+        provider="yara",
+        target="https://example.test",
+        is_threat=False,
+        threat_level=ThreatLevel.SAFE,
+        confidence=0.9,
+        details=details,
+    )
+
+
+def test_download_url_detection_ignores_query_string():
+    service = FileScanService(logger=None)
+    assert service._is_download_url("https://example.test/setup.EXE")
+    assert service._is_download_url("https://example.test/file.zip?token=abc")
+    assert not service._is_download_url("https://example.test/page.html")
+    assert not service._is_download_url("https://example.test/?file=setup.exe")
+
+
+def test_target_itself_is_detected_as_download():
+    service = FileScanService(logger=None)
+    target = "https://example.test/tool.msi"
+    assert service._extract_download_urls(target, []) == [target]
+
+
+def test_download_links_from_yara_results_without_duplicates():
+    service = FileScanService(logger=None)
+    links = ["https://example.test/a.apk", "https://example.test/a.apk"]
+    urls = service._extract_download_urls(
+        "https://example.test/", [yara_result({"download_links": links})]
+    )
+    assert urls == ["https://example.test/a.apk"]
+
+
+def test_download_urls_from_yara_rule_matches():
+    service = FileScanService(logger=None)
+    matches = [
+        {
+            "rule": "Download_Detected",
+            "strings": ["https://example.test/x.jar", "text"],
+        },
+        {"rule": "Phishing_Form", "strings": ["https://example.test/y.exe"]},
+    ]
+    urls = service._extract_download_urls(
+        "https://example.test/", [yara_result({"matches": matches})]
+    )
+    assert urls == ["https://example.test/x.jar"]
+
+
+def test_handle_returns_detected_urls_without_printing(capsys):
+    target = "https://example.test/setup.exe"
+    request = ScanRequest(
+        target=target,
+        providers=(),
+        session_id="test",
+        format="human",
+        raw=False,
+        robot=False,
+        verbose=True,
+        log=False,
+        score=False,
+        score_detail=False,
+        misp_report=False,
+        auto_scan_files=True,
+        download=True,
+        workflow=None,
+    )
+    assert FileScanService(logger=None).handle(request, []) == [target]
+    assert capsys.readouterr().out == ""
+
+
+def test_download_urls_keep_the_order_they_were_found_in():
+    service = FileScanService(logger=None)
+    target = "https://example.test/first.exe"
+    links = [f"https://example.test/{name}.zip" for name in "dcbaedcba"]
+    urls = service._extract_download_urls(
+        target, [yara_result({"download_links": links})]
+    )
+    assert urls == [target] + [f"https://example.test/{n}.zip" for n in "dcbae"]

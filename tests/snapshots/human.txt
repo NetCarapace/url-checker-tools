@@ -1,0 +1,26 @@
+exit: 0
+--- stdout ---
+Scanning http://example.test/login...
+Running whois...
+✓ WHOIS: SAFE (confidence: 90.0%) [0.50s]
+Running link_analyzer...
+✓ LINK_ANALYZER: SAFE (confidence: 90.0%) [0.50s]
+Running misp...
+✓ MISP: SAFE (confidence: 90.0%) [0.50s]
+Running virustotal...
+⚠ VIRUSTOTAL: MALICIOUS (confidence: 80.0%) [0.50s]
+Running google_sb...
+  google_sb is not properly configured
+Running yara...
+✓ YARA: SAFE (confidence: 90.0%) [0.50s]
+Running abuseipdb...
+   abuseipdb scan failed: connection refused
+
+Summary: 5 providers, 1 threats detected
+✓ WHOIS: SAFE (confidence: 90.0%) [0.50s]
+✓ LINK_ANALYZER: SAFE (confidence: 90.0%) [0.50s]
+✓ MISP: SAFE (confidence: 90.0%) [0.50s]
+⚠ VIRUSTOTAL: MALICIOUS (confidence: 80.0%) [0.50s]
+✓ YARA: SAFE (confidence: 90.0%) [0.50s]
+
+--- stderr ---

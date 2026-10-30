@@ -1,0 +1,54 @@
+exit: 0
+--- stdout ---
+Scanning http://example.test/login...
+Running whois...
+✓ WHOIS: SAFE (confidence: 90.0%) [0.50s]
+Running link_analyzer...
+✓ LINK_ANALYZER: SAFE (confidence: 90.0%) [0.50s]
+Running misp...
+✓ MISP: SAFE (confidence: 90.0%) [0.50s]
+Running virustotal...
+⚠ VIRUSTOTAL: MALICIOUS (confidence: 80.0%) [0.50s]
+Running google_sb...
+  google_sb is not properly configured
+Running yara...
+✓ YARA: SAFE (confidence: 90.0%) [0.50s]
+Running abuseipdb...
+   abuseipdb scan failed: connection refused
+
+Summary: 5 providers, 1 threats detected
+✓ WHOIS: SAFE (confidence: 90.0%) [0.50s]
+✓ LINK_ANALYZER: SAFE (confidence: 90.0%) [0.50s]
+✓ MISP: SAFE (confidence: 90.0%) [0.50s]
+⚠ VIRUSTOTAL: MALICIOUS (confidence: 80.0%) [0.50s]
+✓ YARA: SAFE (confidence: 90.0%) [0.50s]
+[INFO] Log saved to: data/logs/sessions/d894cfd0d73f0ed4dae63393caa72d9f6322c1a89aa66fd083bc90e87071dfd6/<date>/snap.log
+
+--- stderr ---
+ERROR: {"timestamp": "<ts>", "event_type": "error", "session_id": "snap", "provider": "abuseipdb", "target": "http://example.test/login", "error": "abuseipdb scan failed: connection refused", "context": {}}
+
+--- snap.log ---
+{
+  "session_metadata": {
+      "session_id": "snap",
+      "timestamp": "<ts>",
+      "target_info": {
+          "original": "http://example.test/login",
+          "normalized": "http://example.test/login",
+          "type": "url",
+          "hash": "d894cfd0d73f0ed4dae63393caa72d9f6322c1a89aa66fd083bc90e87071dfd6",
+          "scheme": "http",
+          "domain": "example.test",
+          "path": "/login",
+          "query": ""
+      },
+      "format": "human"
+  }
+  "content": [
+    "\u2713 WHOIS: SAFE (confidence: 90.0%) [0.50s]",
+    "\u2713 LINK_ANALYZER: SAFE (confidence: 90.0%) [0.50s]",
+    "\u2713 MISP: SAFE (confidence: 90.0%) [0.50s]",
+    "\u26a0 VIRUSTOTAL: MALICIOUS (confidence: 80.0%) [0.50s]",
+    "\u2713 YARA: SAFE (confidence: 90.0%) [0.50s]"
+  ]
+}

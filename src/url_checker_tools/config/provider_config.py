@@ -116,7 +116,7 @@ class ProviderConfigTemplate:
             "enabled": True,
             "url": ProviderEndpoints.MISP.value,
             "api_key": None,  # Auto-loaded from keyring/env
-            "verify_ssl": False,  # For localhost with self-signed cert
+            "verify_ssl": True,  # URLCHECKERTOOLS_MISP_VERIFYSSL: false or a CA bundle path
             "timeout": 60,
             "max_retries": ProviderDefaults.MAX_RETRIES.value,
             "rate_limit_per_minute": ProviderDefaults.RATE_LIMIT.value,
@@ -256,10 +256,19 @@ class ProviderConfigTemplate:
 
             # MISP (URL + API key). KeyManager doesn’t define these; read env vars and try keyring accounts if present
             # Prefer environment variables if set
-            misp_url_env = os.getenv("MISP_URL")
-            misp_key_env = os.getenv("MISP_API_KEY") or os.getenv("MISP_KEY")
+            misp_url_env = os.getenv("URLCHECKERTOOLS_MISP_URL") or os.getenv("MISP_URL")
+            misp_key_env = (
+                os.getenv("URLCHECKERTOOLS_MISP_APIKEY")
+                or os.getenv("MISP_API_KEY")
+                or os.getenv("MISP_KEY")
+            )
             if misp_url_env:
                 configs["misp"]["url"] = misp_url_env
+            misp_verify = os.getenv("URLCHECKERTOOLS_MISP_VERIFYSSL", "")
+            if misp_verify.lower() == "false":
+                configs["misp"]["verify_ssl"] = False
+            elif misp_verify and misp_verify.lower() != "true":
+                configs["misp"]["verify_ssl"] = misp_verify  # path to a CA bundle
             if misp_key_env:
                 configs["misp"]["api_key"] = misp_key_env
             else:
@@ -271,7 +280,7 @@ class ProviderConfigTemplate:
                     k_key = _kr.get_password("urlchecker", "misp") or _kr.get_password(
                         "urlchecker", "misp_api_key"
                     )
-                    if k_url and not configs["misp"].get("url"):
+                    if k_url and not misp_url_env:
                         configs["misp"]["url"] = k_url.strip()
                     if k_key and not configs["misp"].get("api_key"):
                         configs["misp"]["api_key"] = k_key.strip()

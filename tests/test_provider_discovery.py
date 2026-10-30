@@ -18,7 +18,7 @@ from url_checker_tools.core.key_manager import KeyManager
 
 def discover_provider_files():
     """Discover all provider files in the providers directory."""
-    providers_dir = Path(__file__).parent.parent / "src" / "urlchecker" / "providers"
+    providers_dir = Path(__file__).parent.parent / "src" / "url_checker_tools" / "providers"
 
     if not providers_dir.exists():
         return []
@@ -41,7 +41,7 @@ def discover_provider_classes():
     for provider_file in provider_files:
         try:
             # Import the module
-            module_name = f"urlchecker.providers.{provider_file.stem}"
+            module_name = f"url_checker_tools.providers.{provider_file.stem}"
             module = importlib.import_module(module_name)
 
             # Find classes that inherit from BaseProvider
@@ -113,7 +113,7 @@ class TestProviderDiscovery:
     @pytest.mark.parametrize("provider_file", discover_provider_files())
     def test_provider_file_imports_successfully(self, provider_file):
         """Test each provider file can be imported without errors."""
-        module_name = f"urlchecker.providers.{provider_file.stem}"
+        module_name = f"url_checker_tools.providers.{provider_file.stem}"
 
         try:
             module = importlib.import_module(module_name)
@@ -154,7 +154,7 @@ class TestProviderDiscovery:
         # (This checks that abstract methods are properly overridden)
         try:
             # Try to instantiate with minimal config
-            with patch('urlchecker.config.providers_enum.ProviderConfigTemplate.get_all_provider_configs') as mock_config:
+            with patch('url_checker_tools.config.provider_config.ProviderConfigTemplate.get_all_provider_configs') as mock_config:
                 mock_config.return_value = {file_name: {}}
 
                 instance = provider_class(file_name, {})
@@ -174,7 +174,7 @@ class TestProviderDiscovery:
         file_name, class_name, provider_class = provider_info
 
         try:
-            with patch('urlchecker.config.providers_enum.ProviderConfigTemplate.get_all_provider_configs') as mock_config:
+            with patch('url_checker_tools.config.provider_config.ProviderConfigTemplate.get_all_provider_configs') as mock_config:
                 mock_config.return_value = {file_name: {"test_config": "value"}}
 
                 # Try to instantiate provider
@@ -208,7 +208,7 @@ class TestProviderDiscovery:
         # Return annotation should indicate ProviderResult (if present)
         if signature.return_annotation != inspect.Signature.empty:
             # If return annotation is present, it should be ProviderResult
-            expected_types = [ProviderResult, 'ProviderResult', 'urlchecker.core.results.ProviderResult']
+            expected_types = [ProviderResult, 'ProviderResult', 'url_checker_tools.core.results.ProviderResult']
             return_annotation_str = str(signature.return_annotation)
 
             # Check if return annotation suggests ProviderResult
@@ -313,11 +313,11 @@ class TestProviderDiscovery:
         file_name, class_name, provider_class = provider_info
 
         try:
-            with patch('urlchecker.config.providers_enum.ProviderConfigTemplate.get_all_provider_configs') as mock_config:
+            with patch('url_checker_tools.config.provider_config.ProviderConfigTemplate.get_all_provider_configs') as mock_config:
                 mock_config.return_value = {file_name: {"available": True}}
 
                 # Mock HTTP client to prevent actual network calls
-                with patch('urlchecker.core.http_client.HTTPClient') as mock_http_client:
+                with patch('url_checker_tools.core.http_client.HTTPClient') as mock_http_client:
                     mock_http_instance = Mock()
                     mock_http_client.return_value = mock_http_instance
 
@@ -454,7 +454,7 @@ class TestProviderDiscovery:
         file_name, class_name, provider_class = provider_info
 
         try:
-            with patch('urlchecker.config.providers_enum.ProviderConfigTemplate.get_all_provider_configs') as mock_config:
+            with patch('url_checker_tools.config.provider_config.ProviderConfigTemplate.get_all_provider_configs') as mock_config:
                 mock_config.return_value = {file_name: {}}
 
                 instance = provider_class(file_name, {})
@@ -501,7 +501,7 @@ class TestProviderDiscovery:
 
         # Check if provider imports necessary exception classes
         try:
-            module_name = f"urlchecker.providers.{file_name}"
+            module_name = f"url_checker_tools.providers.{file_name}"
             module = importlib.import_module(module_name)
 
             # Check if module imports common exception classes

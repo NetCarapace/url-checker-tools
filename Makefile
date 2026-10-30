@@ -217,17 +217,17 @@ update_deps-dev:
 
 # Run Application
 run:
-	uv run src/url_checker_tools.py \
+	uv run url-checker \
 	  ${target_url};
 
 run_robot:
-	uv run src/url_checker_tools.py \
+	uv run url-checker \
 	  --providers urlhaus,virustotal,yara \
 	  --format synthesis \
 	  ${target_url};
 
 malrun_robot:
-	uv run src/url_checker_tools.py \
+	uv run url-checker \
 	  --providers virustotal \
 	  --format synthesis \
 	  --verbose \
