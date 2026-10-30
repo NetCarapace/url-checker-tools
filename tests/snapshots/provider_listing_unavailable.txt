@@ -1,0 +1,93 @@
+--- list ---
+Available providers:
+==================================================
+  whalebone    -  Not configured (missing API key)
+  virustotal   -  Not configured (missing API key)
+  whois        -  Not configured
+  google_sb    -  Not configured (missing API key)
+  abuseipdb    -  Not configured (missing API key)
+  urlscan      -  Not configured (missing API key)
+  lookyloo     -  Not configured
+  link_analyzer -  Not configured
+  yara         -  Not configured (no YARA rules found)
+  misp         -  Not configured (missing MISP configuration)
+
+Summary: 0/10 providers available
+
+Configuration tips:
+  - API keys can be set via keyring or environment variables
+  - Use 'keyring set url-checker-tools <provider>_key <your-key>' for secure storage
+  - YARA provider needs rules in 'rules/' directory or use --yara-rules flag
+
+--- status ---
+Provider Status Report:
+============================================================
+
+WHALEBONE:
+  Status:  Not properly configured
+  Issue: Missing API key
+  Solution: Set API key via keyring or environment variable
+    - Keyring: keyring set url-checker-tools whalebone_key <your-api-key>
+    - Env var: URLCHECKER_WHALEBONE_API_KEY=<your-api-key>
+
+VIRUSTOTAL:
+  Status:  Not properly configured
+  Issue: Missing API key
+  Solution: Set API key via keyring or environment variable
+    - Keyring: keyring set url-checker-tools virustotal_key <your-api-key>
+    - Env var: URLCHECKER_VIRUSTOTAL_API_KEY=<your-api-key>
+
+WHOIS:
+  Status:  Not properly configured
+
+GOOGLE_SB:
+  Status:  Not properly configured
+  Issue: Missing API key
+  Solution: Set API key via keyring or environment variable
+    - Keyring: keyring set url-checker-tools google_sb_key <your-api-key>
+    - Env var: URLCHECKER_GOOGLE_SB_API_KEY=<your-api-key>
+
+ABUSEIPDB:
+  Status:  Not properly configured
+  Issue: Missing API key
+  Solution: Set API key via keyring or environment variable
+    - Keyring: keyring set url-checker-tools abuseipdb_key <your-api-key>
+    - Env var: URLCHECKER_ABUSEIPDB_API_KEY=<your-api-key>
+
+URLSCAN:
+  Status:  Not properly configured
+  Issue: Missing API key
+  Solution: Set API key via keyring or environment variable
+    - Keyring: keyring set url-checker-tools urlscan_key <your-api-key>
+    - Env var: URLCHECKER_URLSCAN_API_KEY=<your-api-key>
+
+LOOKYLOO:
+  Status:  Not properly configured
+
+LINK_ANALYZER:
+  Status:  Not properly configured
+
+YARA:
+  Status:  Not properly configured
+  Issue: No YARA rules found
+  Solution: Add .yar files to 'rules/' directory or use --yara-rules
+  Current rules directory: data/yara
+
+MISP:
+  Status:  Not properly configured
+  Issue: MISP configuration missing
+  Solution: Configure MISP server URL and API key
+
+============================================================
+SUMMARY:
+  Available: 0 providers
+  Unavailable: 10 providers
+    - whalebone, virustotal, whois, google_sb, abuseipdb, urlscan, lookyloo, link_analyzer, yara, misp
+  Errors: 0 providers
+
+Overall: 0/10 providers ready
+
+Next steps:
+  1. Configure missing API keys for maximum threat detection coverage
+  2. Check provider documentation for setup requirements
+  3. Test with available providers using: --providers none

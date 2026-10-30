@@ -1,0 +1,78 @@
+--- list ---
+Available providers:
+==================================================
+  whalebone    - [AVAILABLE] (API key configured)
+  virustotal   - [AVAILABLE] (API key configured)
+  whois        - [AVAILABLE] (built-in functionality)
+  google_sb    - [AVAILABLE] (API key configured)
+  abuseipdb    - [AVAILABLE] (API key configured)
+  urlscan      - [AVAILABLE] (API key configured)
+  lookyloo     - [AVAILABLE] (no API key required)
+  link_analyzer - [AVAILABLE]
+  yara         - [AVAILABLE] (rules dir: data/yara)
+  misp         - [AVAILABLE] (API key configured)
+
+Summary: 10/10 providers available
+
+--- status ---
+Provider Status Report:
+============================================================
+
+WHALEBONE:
+  Status: [AVAILABLE]
+  Config: SimpleNamespace
+
+VIRUSTOTAL:
+  Status: [AVAILABLE]
+  Config: SimpleNamespace
+  API key: configured
+
+WHOIS:
+  Status: [AVAILABLE]
+  Config: SimpleNamespace
+  Built-in WHOIS client
+
+GOOGLE_SB:
+  Status: [AVAILABLE]
+  Config: SimpleNamespace
+  API key: configured
+
+ABUSEIPDB:
+  Status: [AVAILABLE]
+  Config: SimpleNamespace
+  API key: configured
+
+URLSCAN:
+  Status: [AVAILABLE]
+  Config: SimpleNamespace
+  API key: configured
+
+LOOKYLOO:
+  Status: [AVAILABLE]
+  Config: SimpleNamespace
+  Public service (no API key required)
+
+LINK_ANALYZER:
+  Status: [AVAILABLE]
+  Config: SimpleNamespace
+
+YARA:
+  Status: [AVAILABLE]
+  Config: SimpleNamespace
+  Rules directory: data/yara
+  Max file size: 10.0 MB
+  Scan timeout: 30s
+
+MISP:
+  Status: [AVAILABLE]
+  Config: SimpleNamespace
+  API key: configured
+
+============================================================
+SUMMARY:
+  Available: 10 providers
+    - whalebone, virustotal, whois, google_sb, abuseipdb, urlscan, lookyloo, link_analyzer, yara, misp
+  Unavailable: 0 providers
+  Errors: 0 providers
+
+Overall: 10/10 providers ready
