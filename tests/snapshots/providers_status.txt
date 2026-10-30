@@ -37,8 +37,8 @@ GOOGLE_SB:
   Status:  Not properly configured
   Issue: Missing API key
   Solution: Set API key via keyring or environment variable
-    - Keyring: keyring set url-checker-tools google_sb_key <your-api-key>
-    - Env var: URLCHECKER_GOOGLE_SB_API_KEY=<your-api-key>
+    - Keyring: python tools/manage_keys.py add --account googlesafebrowsing_apikey
+    - Env var: URLCHECKERTOOLS_GOOGLESAFEBROWSING_APIKEY=<your-api-key>
 
 ABUSEIPDB:
   Status: [AVAILABLE]

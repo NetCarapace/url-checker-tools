@@ -80,7 +80,15 @@ VERBOSE_DETAILS: Dict[str, Callable[[str, Dict[str, Any]], str]] = {
 
 # Provider listing hints (--list-providers / --providers-status)
 
-API_KEY_PROVIDERS = ["virustotal", "whalebone", "urlscan", "google_sb", "abuseipdb"]
+# Keyring accounts KeyManager reads (env var: URLCHECKERTOOLS_<ACCOUNT>)
+API_KEY_ACCOUNTS = {
+    "virustotal": ["virustotal_apikey"],
+    "whalebone": ["whalebone_apisecretkey", "whalebone_apiaccesskey"],
+    "urlscan": ["urlscan_apikey"],
+    "google_sb": ["googlesafebrowsing_apikey"],
+    "abuseipdb": ["abuseipdb_apikey"],
+}
+API_KEY_PROVIDERS = list(API_KEY_ACCOUNTS)
 
 AVAILABLE_HINTS = {
     **{name: " (API key configured)" for name in API_KEY_PROVIDERS + ["misp"]},
@@ -156,8 +164,9 @@ STATUS_DETAILS: Dict[str, Callable[[str, Any], None]] = {
 def _help_missing_api_key(name: str, config) -> None:
     print("  Issue: Missing API key")
     print("  Solution: Set API key via keyring or environment variable")
-    print(f"    - Keyring: keyring set url-checker-tools {name}_key <your-api-key>")
-    print(f"    - Env var: URLCHECKER_{name.upper()}_API_KEY=<your-api-key>")
+    for account in API_KEY_ACCOUNTS[name]:
+        print(f"    - Keyring: python tools/manage_keys.py add --account {account}")
+        print(f"    - Env var: URLCHECKERTOOLS_{account.upper()}=<your-api-key>")
 
 
 def _help_yara(name: str, config) -> None:
@@ -577,7 +586,8 @@ class OutputService:
             print("\nConfiguration tips:")
             print("  - API keys can be set via keyring or environment variables")
             print(
-                "  - Use 'keyring set url-checker-tools <provider>_key <your-key>' for secure storage"
+                "  - Use 'python tools/manage_keys.py add --account <account>' for secure storage"
+                " (account names: see --providers-status)"
             )
             print(
                 "  - YARA provider needs rules in 'rules/' directory or use --yara-rules flag"

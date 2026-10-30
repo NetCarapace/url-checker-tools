@@ -13,7 +13,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from url_checker_tools.cli.output_service import OutputService
+from url_checker_tools.cli.output_service import API_KEY_ACCOUNTS, OutputService
+from url_checker_tools.core.key_manager import KeyManager
 from url_checker_tools.services.provider_registry import ProviderRegistry
 
 SNAPSHOT_DIR = Path(__file__).parent / "snapshots"
@@ -96,3 +97,23 @@ def test_provider_listing_matches_snapshot(scenario, capsys):
     if os.environ.get("UPDATE_SNAPSHOTS") or not snapshot.exists():
         snapshot.write_text(actual, encoding="utf-8")
     assert actual == snapshot.read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize(
+    "account", [a for accounts in API_KEY_ACCOUNTS.values() for a in accounts]
+)
+def test_api_key_hints_match_what_key_manager_reads(account, monkeypatch):
+    """The env var shown in --providers-status is the one KeyManager actually reads."""
+    monkeypatch.setenv(f"URLCHECKERTOOLS_{account.upper()}", "hint-check")
+    assert KeyManager()._get_key(account) == "hint-check"
+
+
+def test_every_key_manager_getter_has_a_hint():
+    """Each account KeyManager's get_* methods read appears in the hints."""
+    import inspect
+    import re
+
+    source = inspect.getsource(KeyManager)
+    read = set(re.findall(r'def get_\w+\(self\).*?_get_key\("(\w+)"', source, re.S))
+    hinted = {a for accounts in API_KEY_ACCOUNTS.values() for a in accounts}
+    assert read == hinted

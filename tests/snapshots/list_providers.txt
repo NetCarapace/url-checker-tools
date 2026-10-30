@@ -15,7 +15,7 @@ Summary: 7/8 providers available
 
 Configuration tips:
   - API keys can be set via keyring or environment variables
-  - Use 'keyring set url-checker-tools <provider>_key <your-key>' for secure storage
+  - Use 'python tools/manage_keys.py add --account <account>' for secure storage (account names: see --providers-status)
   - YARA provider needs rules in 'rules/' directory or use --yara-rules flag
 
 --- stderr ---

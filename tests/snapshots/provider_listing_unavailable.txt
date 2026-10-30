@@ -16,7 +16,7 @@ Summary: 0/10 providers available
 
 Configuration tips:
   - API keys can be set via keyring or environment variables
-  - Use 'keyring set url-checker-tools <provider>_key <your-key>' for secure storage
+  - Use 'python tools/manage_keys.py add --account <account>' for secure storage (account names: see --providers-status)
   - YARA provider needs rules in 'rules/' directory or use --yara-rules flag
 
 --- status ---
@@ -27,15 +27,17 @@ WHALEBONE:
   Status:  Not properly configured
   Issue: Missing API key
   Solution: Set API key via keyring or environment variable
-    - Keyring: keyring set url-checker-tools whalebone_key <your-api-key>
-    - Env var: URLCHECKER_WHALEBONE_API_KEY=<your-api-key>
+    - Keyring: python tools/manage_keys.py add --account whalebone_apisecretkey
+    - Env var: URLCHECKERTOOLS_WHALEBONE_APISECRETKEY=<your-api-key>
+    - Keyring: python tools/manage_keys.py add --account whalebone_apiaccesskey
+    - Env var: URLCHECKERTOOLS_WHALEBONE_APIACCESSKEY=<your-api-key>
 
 VIRUSTOTAL:
   Status:  Not properly configured
   Issue: Missing API key
   Solution: Set API key via keyring or environment variable
-    - Keyring: keyring set url-checker-tools virustotal_key <your-api-key>
-    - Env var: URLCHECKER_VIRUSTOTAL_API_KEY=<your-api-key>
+    - Keyring: python tools/manage_keys.py add --account virustotal_apikey
+    - Env var: URLCHECKERTOOLS_VIRUSTOTAL_APIKEY=<your-api-key>
 
 WHOIS:
   Status:  Not properly configured
@@ -44,22 +46,22 @@ GOOGLE_SB:
   Status:  Not properly configured
   Issue: Missing API key
   Solution: Set API key via keyring or environment variable
-    - Keyring: keyring set url-checker-tools google_sb_key <your-api-key>
-    - Env var: URLCHECKER_GOOGLE_SB_API_KEY=<your-api-key>
+    - Keyring: python tools/manage_keys.py add --account googlesafebrowsing_apikey
+    - Env var: URLCHECKERTOOLS_GOOGLESAFEBROWSING_APIKEY=<your-api-key>
 
 ABUSEIPDB:
   Status:  Not properly configured
   Issue: Missing API key
   Solution: Set API key via keyring or environment variable
-    - Keyring: keyring set url-checker-tools abuseipdb_key <your-api-key>
-    - Env var: URLCHECKER_ABUSEIPDB_API_KEY=<your-api-key>
+    - Keyring: python tools/manage_keys.py add --account abuseipdb_apikey
+    - Env var: URLCHECKERTOOLS_ABUSEIPDB_APIKEY=<your-api-key>
 
 URLSCAN:
   Status:  Not properly configured
   Issue: Missing API key
   Solution: Set API key via keyring or environment variable
-    - Keyring: keyring set url-checker-tools urlscan_key <your-api-key>
-    - Env var: URLCHECKER_URLSCAN_API_KEY=<your-api-key>
+    - Keyring: python tools/manage_keys.py add --account urlscan_apikey
+    - Env var: URLCHECKERTOOLS_URLSCAN_APIKEY=<your-api-key>
 
 LOOKYLOO:
   Status:  Not properly configured
