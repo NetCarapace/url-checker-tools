@@ -31,16 +31,18 @@ def create_argument_parser() -> argparse.ArgumentParser:
 
 Keys are stored in the system keyring using:
   Service: "urlchecker"
-  Account: <provider_name>
+  Account: the account name the URL checker reads (below)
 
-Common providers include virustotal, googlesafebrowsing, urlscan, misp, shodan, urlhaus, etc.
+Accounts: virustotal_apikey, googlesafebrowsing_apikey, urlscan_apikey,
+abuseipdb_apikey, whalebone_apisecretkey, whalebone_apiaccesskey,
+misp (API key), misp_url
 
 Examples:
-  manage_keys add --account virustotal
+  manage_keys add --account virustotal_apikey
   manage_keys add --account misp --key YOUR_API_KEY
   manage_keys list
-  manage_keys delete --account virustotal
-  manage_keys test --account googlesafebrowsing
+  manage_keys delete --account virustotal_apikey
+  manage_keys test --account googlesafebrowsing_apikey
   manage_keys test  # Test all stored keys
 """
 
@@ -61,15 +63,15 @@ Examples:
         description="Store an API key securely in the system keyring",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""Examples:
-  manage_keys add --account virustotal
+  manage_keys add --account virustotal_apikey
   manage_keys add --account misp --key abc123def456
-  manage_keys add --account googlesafebrowsing""",
+  manage_keys add --account googlesafebrowsing_apikey""",
     )
     add_parser.add_argument(
         "--account",
         required=True,
-        metavar="PROVIDER",
-        help="Provider name (virustotal, googlesafebrowsing, urlscan, misp, etc.)",
+        metavar="ACCOUNT",
+        help="Account name (virustotal_apikey, googlesafebrowsing_apikey, misp, etc.)",
     )
     add_parser.add_argument(
         "--key",
@@ -93,14 +95,14 @@ Examples:
         description="Remove an API key from the system keyring",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""Examples:
-  manage_keys delete --account virustotal
+  manage_keys delete --account virustotal_apikey
   manage_keys delete --account misp""",
     )
     delete_parser.add_argument(
         "--account",
         required=True,
-        metavar="PROVIDER",
-        help="Provider name to delete API key for",
+        metavar="ACCOUNT",
+        help="Account name to delete API key for",
     )
 
     # Test keys command
@@ -111,12 +113,12 @@ Examples:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""Examples:
   manage_keys test                    # Test all stored keys
-  manage_keys test --account virustotal  # Test specific provider""",
+  manage_keys test --account virustotal_apikey  # Test specific account""",
     )
     test_parser.add_argument(
         "--account",
-        metavar="PROVIDER",
-        help="Specific provider to test (tests all if not specified)",
+        metavar="ACCOUNT",
+        help="Specific account to test (tests all if not specified)",
     )
 
     return parser
@@ -148,7 +150,7 @@ def list_keys(key_manager: KeyManager) -> bool:
     try:
         print("Keyring Storage Information:")
         print(f"  Service Name: '{SERVICE_NAME}'")
-        print(f"  Storage Format: service='{SERVICE_NAME}', account='<provider_name>'")
+        print(f"  Storage Format: service='{SERVICE_NAME}', account='<account_name>'")
         print()
 
         accounts = key_manager.list_stored_accounts()
@@ -157,10 +159,10 @@ def list_keys(key_manager: KeyManager) -> bool:
             print("No API keys found in keyring")
             print()
             print("To add a key, use:")
-            print("  manage_keys add --account <provider_name>")
+            print("  manage_keys add --account <account_name>")
             print()
             print(
-                "Common providers: virustotal, googlesafebrowsing, urlscan, misp, urlhaus"
+                "Accounts: virustotal_apikey, googlesafebrowsing_apikey, urlscan_apikey, misp"
             )
             return True
 
@@ -188,13 +190,14 @@ def list_keys(key_manager: KeyManager) -> bool:
 def _get_provider_info(account: str) -> str:
     """Get descriptive information about a provider."""
     provider_descriptions = {
-        "virustotal": "VirusTotal - Malware/URL analysis service",
-        "googlesafebrowsing": "Google Safe Browsing - URL safety checking",
-        "urlscan": "URLScan.io - Website screenshot and analysis",
-        "misp": "MISP - Malware Information Sharing Platform",
-        "shodan": "Shodan - Internet-connected device search engine",
-        "urlhaus": "URLhaus - Malware URL database",
-        "pandora": "Pandora - File analysis service",
+        "virustotal_apikey": "VirusTotal - Malware/URL analysis service",
+        "googlesafebrowsing_apikey": "Google Safe Browsing - URL safety checking",
+        "urlscan_apikey": "URLScan.io - Website screenshot and analysis",
+        "abuseipdb_apikey": "AbuseIPDB - IP abuse reports",
+        "whalebone_apisecretkey": "Whalebone - API secret key",
+        "whalebone_apiaccesskey": "Whalebone - API access key",
+        "misp": "MISP - Malware Information Sharing Platform (API key)",
+        "misp_url": "MISP - server URL",
     }
     return provider_descriptions.get(account, f"Provider: {account}")
 
