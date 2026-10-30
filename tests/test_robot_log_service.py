@@ -4,6 +4,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from url_checker_tools.cli.output_service import OutputService
@@ -71,3 +73,30 @@ def test_cli_prints_robot_log_errors(capsys):
     assert capsys.readouterr().out == (
         "[ERROR] Failed to create robot logs: Session ID required for dual logging\n"
     )
+
+
+def test_failed_log_write_is_reported_not_claimed_as_created(tmp_path, capsys):
+    """A log file that cannot be written must not be reported as created."""
+    logger = WorkflowLogger(log_dir=str(tmp_path), session_id="robot-test")
+    blocked = tmp_path / "blocked"
+    blocked.mkdir()
+    logger.log_dir = blocked
+    (blocked / "sessions").write_text("a file where the directory should be")
+    builder = RobotLogBuilder("robot-test", logger)
+    result = ProviderResult("whois", TARGET, False, ThreatLevel.SAFE, 0.9, {})
+
+    output = OutputService(make_request(), None, builder.write, None)
+    output._write_robot_logs(TARGET, [result], "{}", None)
+
+    out = capsys.readouterr().out
+    assert out.startswith("[ERROR] Failed to create robot logs:")
+    assert "Robot logs created" not in out
+
+
+def test_failed_session_log_write_raises(tmp_path):
+    logger = WorkflowLogger(log_dir=str(tmp_path), session_id="s")
+    path, _ = logger._create_log_path(TARGET, "s")
+    path.parent.mkdir(parents=True)
+    path.mkdir()  # a directory where the log file should be
+    with pytest.raises(OSError):
+        logger.create_session_log(TARGET, "output", "human")
