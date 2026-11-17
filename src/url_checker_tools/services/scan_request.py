@@ -1,7 +1,7 @@
 """Immutable scan request built once from the parsed CLI arguments."""
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Sequence, Tuple
+from typing import Any, Dict, Sequence, Tuple
 
 
 @dataclass(frozen=True)

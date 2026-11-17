@@ -39,7 +39,7 @@ misp (API key), misp_url
 
 Examples:
   manage_keys add --account virustotal_apikey
-  manage_keys add --account misp --key YOUR_API_KEY
+  manage_keys add --account misp --key $YOUR_API_KEY
   manage_keys list
   manage_keys delete --account virustotal_apikey
   manage_keys test --account googlesafebrowsing_apikey
