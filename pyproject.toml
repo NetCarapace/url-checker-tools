@@ -32,7 +32,7 @@ dependencies = [
     "yara-x>=1.5.0",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "build",
     "black",
@@ -79,7 +79,7 @@ version = "1.0.0"
 commit = true
 tag = true
 
-[tool.bumpversion.file."src/urlchecker/__init__.py"]
+[tool.bumpversion.file."src/url_checker_tools/__init__.py"]
 search = '__version__ = "{current_version}"'
 replace = '__version__ = "{new_version}"'
 
@@ -109,12 +109,12 @@ use_parentheses = true
 ensure_newline_before_comments = true
 line_length = 88
 
-# Optional integrations
-#integrations = [
-#    "pymisp==2.5.10",
-#]
-
 [tool.pytest.ini_options]
+filterwarnings = [
+    "error",
+    "ignore::UserWarning",
+    "ignore::DeprecationWarning"
+]
 markers = [
     "unit: unit tests that validate small, isolated functionality",
     "integration: integration tests that exercise multiple components together",

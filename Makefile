@@ -23,6 +23,12 @@ GREEN := \033[1;32m
 RED := \033[31m
 BOLD_GREEN := \033[1;32m
 
+UV_VERSION :=
+UV ?= uv
+export UV_PROJECT_ENVIRONMENT := $(CURDIR)/.venv
+VERSION_FILE ?= VERSION
+PACKAGE_VERSION := $(strip $(shell cat $(VERSION_FILE) 2>/dev/null))
+
 ########################################################################################
 # PREAMBLE - OS AND DEPENDENCY CHECKS
 ########################################################################################
@@ -69,8 +75,6 @@ else
     UV_VERSION := $(shell uv --version 2>/dev/null)
     $(info ✅ uv found: $(UV_VERSION))
 endif
-UV_VERSION :=
-
 
 ########################################################################################
 # VARIABLES
@@ -128,7 +132,6 @@ $(foreach file,$(envfiles),$(eval export $(shell sed 's/=.*//' $(file))))
 # Build intermediary variables
 # We currently use the debian convention at some level
 # Even if our package is not really a debian package yet
-PACKAGE_VERSION = $(shell cat VERSION)
 PACKAGE_PYTHON = $(shell cat .python-version)
 PACKAGE_SUFFIX = deployment-bundle.tar.gz
 PACKAGE_FULLNAME = ${PACKAGENAME}_v${PACKAGE_VERSION}_Python${PACKAGE_PYTHON}-${PACKAGE_SUFFIX}
@@ -146,7 +149,7 @@ venv_command = ". $(venv_dir)/bin/activate"
 #
 new_package = ""
 
-target_url = "https://www.google.com"
+target_url = "https://www.example.com"
 
 ########################################################################################
 # RULES
@@ -163,61 +166,55 @@ target_url = "https://www.google.com"
 # Init
 ########################################################################################
 configure_repo_dev: install-dev
-# TODO Help the User to create the .envdev and .env files
-	uv sync --locked; \
-	echo "${venv_command}"; \
-	uv run pip3 list; \
-	go_to_install="N"; \
-	if [ ${automatic} = "N" ]; then \
-		echo "Reply Y if and only if the pip3 list output above is consistent and does not display system packages !"; \
-		echo "Ctrl+C to escape ..."; \
-		read -p "Do you want to install other specific dependencies from specific requirement files with pip ? (Y/N) " go_to_install; \
-		if [ $$go_to_install = "Y" ] || [ $$go_to_install = "y" ]; then \
-			uv run pip3 install -r requirements-dev.txt -e .; \
-		else \
-			echo "Tweak requirements-dev.txt skipped"; \
-		fi; \
-	fi;
-	uv run pre-commit install; \
-	uv run pre-commit autoupdate; \
-	echo "Initial pre-commit run"; \
-	uv run pre-commit run --all-files; \
 	echo "Virtual environment created, local repo configured with pre-commit hooks."; \
-	cd /tmp; \
-	# git clone TODO ADD Github stuff
+
+first_install:
+	echo
+	echo "💣 DO NOT RUN IN PRODUCTION !!! Press Enter to continue or Ctrl+C to exit"
+	read -r wait_for_me
+	$(UV) venv --allow-existing
+	$(UV) sync --locked
+	$(UV) run pre-commit install
+	$(UV) run pre-commit autoupdate
+	echo "Initial pre-commit run"
+	$(UV) run pre-commit run --all-files
+	$(MAKE) configure_repo_dev -s >/dev/null
 
 # Development lifecycle #
 ########################################################################################
 # Dependencies
 # -dev suffixes means we specifically manage dependencies present only in Dev Environment
-install_deps:
-	uv pip install pip
-	uv venv --seed
-	uv sync --locked
-
 install-dev:
-	uv pip install pip
-	uv venv --seed
-	uv sync --dev --locked
+	$(UV) pip install pip
+	$(UV) venv --seed
 
 add_newdep:
-	uv add $(new_package)
+	$(UV) add $(new_package)
 
 add_newdep-dev:
-	uv add --dev $(new_package)
+	$(UV) add --dev $(new_package)
 
-update_deps:
-	uv lock --upgrade
-	uv sync --locked
+# Upgrade all dependencies (review the diff!)
+lock_upgrade:
+	echo "🔒 Upgrading uv.lock..."
+	$(UV) lock --upgrade
+	$(UV) sync --lockedthe
 
-update_deps-dev:
-	uv lock --upgrade
-	uv sync --dev --locked
+# CI gate: fail if uv.lock is stale
+lock_check:
+	echo "🔒 Checking uv.lock..."
+	$(UV) lock --check
+
 ########################################################################################
 
 # Run Application
+python3_run:
+# Like in Prod
+	.venv/bin/python3 src/url_checker_tools.py ${target_url};
+
 run:
-	uv run url-checker \
+	$(UV) run url-checker-tools \
+	  --providers misp,virustotal,abuseipdb,whalebone,urlscan \
 	  ${target_url};
 
 run_robot:
@@ -241,28 +238,29 @@ malrun_robot_eicar:
 ########################################################################################
 
 # Build 🌍 , Publish  🌬️ and Release 🔥
-build: update_deps clean
+build: clean
 	set -e; \
-	trap '$(MAKE) configure_repo_dev' EXIT \
+	#trap '$(MAKE) first_install' EXIT \
 	# Export uv.lock to requirements-build.txt for downloading \
 	echo "Create requirements-build.txt"; \
-	uv export \
-	  --format requirements.txt \
-	  --no-hashes \
+	$(UV) export \
 	  --frozen \
-	  --no-editable \
-	  --no-emit-project > requirements-build.txt; \
+	  --no-dev \
+	  --no-emit-project \
+	  --no-hashes \
+	  --format requirements.txt \
+	  --no-editable > requirements-build.txt; \
 	# Export all wheel \
 	echo "Download wheel"; \
 	mkdir -p offline-wheels; \
 	# Download ONLY the locked dependencies for this project \
-	uv run pip download \
+	$(UV) run python3 -m pip download \
 	  -r requirements-build.txt \
 	  --dest offline-wheels/ \
       --prefer-binary \
 	# Add build package tools \
 	# python3 -m pip download setuptools wheel pip --dest offline-wheels/ \
-	python3 -m pip download \
+	$(UV) run python3 -m pip download \
 	  setuptools \
 	  --dest offline-wheels \
 	  --prefer-binary \
@@ -307,12 +305,12 @@ release: build publish
 ########################################################################################
 # Unit tests
 test_units:
-	uv run python tests/run_tests.py; \
-	#uv run pytest --cov=src/"${PACKAGENAME}" -n auto -v --capture=no; \
-	#uv run pytest -m unit --cov=src/"${PACKAGENAME}" -n auto -v --capture=no; \
-	#uv run pytest -m integration --cov=src/"${PACKAGENAME}" -n auto -v --capture=no; \
-	#uv run pytest -m security --cov=src/"${PACKAGENAME}" -n auto -v --capture=no; \
-	#uv run pytest -m network --cov=src/"${PACKAGENAME}" -n auto -v --capture=no; \
+	$(UV) run python tests/run_tests.py; \
+	#$(UV) run pytest --cov=src/"${PACKAGENAME}" -n auto -v --capture=no; \
+	#$(UV) run pytest -m unit --cov=src/"${PACKAGENAME}" -n auto -v --capture=no; \
+	#$(UV) run pytest -m integration --cov=src/"${PACKAGENAME}" -n auto -v --capture=no; \
+	#$(UV) run pytest -m security --cov=src/"${PACKAGENAME}" -n auto -v --capture=no; \
+	#$(UV) run pytest -m network --cov=src/"${PACKAGENAME}" -n auto -v --capture=no; \
     #coverage run -m pytest -v --capture=no; \
 	#coverage report;
 ########################################################################################
@@ -321,7 +319,7 @@ test_units:
 # Housekeeping #
 ################
 format_and_lint:
-	uv run pre-commit run --all-files --verbose;
+	$(UV) run pre-commit run --all-files --show-diff-on-failure --verbose;
 
 bump_version: VERSION
 ifeq (${version_repo},"0.0.0")
@@ -343,7 +341,7 @@ else
 	sed -i "s/.*version =.*/version = \"${version_repo}\"/" "pyproject.toml"
 
 	@echo "🔒 Updating uv.lock..."
-	uv lock
+	$(UV) lock
 
 	@echo "📦 Staging changes..."
 	git add VERSION
@@ -370,10 +368,10 @@ clean:
 	-find . -name "*.egg-info" -print0 | xargs -0 rm -rf
 
 coverageclean:
-	-rm src/urlchecker/.coverage
-	-rm src/urlchecker/.coverage.*
-	-rm src/urlchecker/coverage.xml
-	-rm -rf src/urlchecker/htmlcov
+	-rm src/url_checker_tools/.coverage
+	-rm src/url_checker_tools/.coverage.*
+	-rm src/url_checker_tools/coverage.xml
+	-rm -rf src/url_checker_tools/htmlcov
 
 distclean:
 	-rm -rf ./dist
