@@ -221,17 +221,23 @@ run:
 	  ${target_url};
 
 run_robot:
-	uv run url-checker \
-	  --providers urlhaus,virustotal,yara \
-	  --format synthesis \
-	  ${target_url};
+	$(UV) run url-checker-tools --robot --verbose --misp 'http://www.github.com' --sid Test_github;
+	$(UV) run url-checker-tools --robot --verbose --misp 'http://www.7zip.com' --sid Test_7zip;
 
-malrun_robot:
-	uv run url-checker \
+malrun_wicar:
+	$(UV) run url-checker-tools \
 	  --providers virustotal \
 	  --format synthesis \
 	  --verbose \
 	  "https://malware.wicar.org";
+
+malrun_robot_eicar:
+	$(UV) run url-checker-tools \
+		--robot \
+	  --verbose \
+	  --misp-report \
+	  "http://malware.wicar.org/data/eicar.com" --sid Test_sus;
+
 ########################################################################################
 
 # Build 🌍 , Publish  🌬️ and Release 🔥
