@@ -75,7 +75,6 @@ def test_handle_returns_detected_urls_without_printing(capsys):
         misp_report=False,
         auto_scan_files=True,
         download=True,
-        workflow=None,
     )
     assert FileScanService(logger=None).handle(request, []) == [target]
     assert capsys.readouterr().out == ""

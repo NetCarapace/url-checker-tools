@@ -20,7 +20,6 @@ from url_checker_tools.services.provider_registry import ProviderRegistry
 from url_checker_tools.services.robot_log_service import RobotLogBuilder
 from url_checker_tools.services.scan_request import ScanRequest
 from url_checker_tools.services.scan_service import ScanService
-from url_checker_tools.workflows.orchestrator import WorkflowOrchestrator
 
 
 class URLCheckerCLI:
@@ -99,32 +98,17 @@ class URLCheckerCLI:
         scan_service = self._build_services(request)
 
         try:
-            if request.workflow:
-                # Use Celery workflow
-                orchestrator = WorkflowOrchestrator(self.session_id)
+            # Direct scanning
+            results = scan_service.run(request, self.output)
 
-                if request.workflow == "fast":
-                    workflow_id = orchestrator.scan_url_fast(request.target)
-                elif request.workflow == "reputation":
-                    workflow_id = orchestrator.scan_domain_reputation(request.target)
-                else:
-                    workflow_id = orchestrator.scan_url_complete(request.target)
+            # MISP reporting (if enabled) - do this before output format to capture event ID
+            misp_data = None
+            if request.misp_report and results:
+                misp_data = MISPReportingService().report(request, results)
+                self.output.misp_reported(misp_data)
 
-                if not request.robot:
-                    print(f"Started workflow {workflow_id} for {request.target}")
-                    print("Use 'celery flower' to monitor progress")
-            else:
-                # Direct scanning
-                results = scan_service.run(request, self.output)
-
-                # MISP reporting (if enabled) - do this before output format to capture event ID
-                misp_data = None
-                if request.misp_report and results:
-                    misp_data = MISPReportingService().report(request, results)
-                    self.output.misp_reported(misp_data)
-
-                # Handle output format (now with MISP data available)
-                self.output.render(results, misp_data=misp_data)
+            # Handle output format (now with MISP data available)
+            self.output.render(results, misp_data=misp_data)
 
         except KeyboardInterrupt:
             if not request.robot:

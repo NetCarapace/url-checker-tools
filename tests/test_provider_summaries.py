@@ -251,7 +251,6 @@ def make_request():
         misp_report=False,
         auto_scan_files=False,
         download=False,
-        workflow=None,
     )
 
 

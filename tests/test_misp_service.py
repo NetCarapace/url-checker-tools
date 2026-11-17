@@ -63,7 +63,6 @@ def make_request(verbose):
         misp_report=True,
         auto_scan_files=False,
         download=False,
-        workflow=None,
     )
 
 

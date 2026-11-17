@@ -18,7 +18,6 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-    "celery[redis]>=5.3.4",
     "keyring>=25",
     "pydantic>=2.0.0",
     "pydantic-settings>=2.0.0",
@@ -27,7 +26,6 @@ dependencies = [
     "pypandora>=1.9",
     "pysafebrowsing>=0.1",
     "python-dotenv>=1.1",
-    "redis>=5",
     "requests>=2",
     "vt-py>=0.21.0",
     "whois>=1.20240129.2",

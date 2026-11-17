@@ -21,7 +21,6 @@ class ScanRequest:
     misp_report: bool
     auto_scan_files: bool
     download: bool
-    workflow: Optional[str]
     yara_rules: Tuple[str, ...] = ()
     yara_timeout: int = 30
     yara_max_bytes: int = 10485760
@@ -45,7 +44,6 @@ class ScanRequest:
             misp_report=args.misp_report,
             auto_scan_files=args.auto_scan_files,
             download=args.download,
-            workflow=args.workflow,
             yara_rules=tuple(args.yara_rules),
             yara_timeout=args.yara_timeout,
             yara_max_bytes=args.yara_max_bytes,

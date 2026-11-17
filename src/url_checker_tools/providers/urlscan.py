@@ -5,7 +5,6 @@ import time
 from typing import Dict
 
 from url_checker_tools.core.base_provider import BaseProvider
-from url_checker_tools.core.celery_app import celery_app
 from url_checker_tools.core.results import ProviderResult, ThreatLevel
 
 
@@ -47,11 +46,12 @@ class URLScanProvider(BaseProvider):
     def _submit_scan(self, target: str) -> Dict:
         """Submit URL for scanning."""
         url = f"{self.config.endpoint}/scan/"
-        headers = {"API-Key": self.config.api_key, "Content-Type": "application/json"}
+        headers = {"api-key": self.config.api_key, "Content-Type": "application/json"}
 
         payload = {"url": target, "visibility": "public", "tags": ["url-checker-tools"]}
 
         response_data, _ = self.http.post(url, headers=headers, json_data=payload)
+
         return response_data
 
     def _wait_and_get_results(self, target: str, scan_uuid: str) -> ProviderResult:
@@ -74,7 +74,7 @@ class URLScanProvider(BaseProvider):
             try:
                 # Get results
                 url = f"{self.config.endpoint}/result/{scan_uuid}/"
-                headers = {"API-Key": self.config.api_key}
+                headers = {"api-key": self.config.api_key, "Content-Type": "application/json"}
                 response_data, _ = self.http.get(url, headers=headers)
 
                 # URLScan.io returns the full result when ready - check for "task" field
@@ -171,27 +171,3 @@ class URLScanProvider(BaseProvider):
                 details=details,
                 confidence=confidence,
             )
-
-
-# Create Celery task
-@celery_app.task(name="urlscan_scan")
-def urlscan_scan(target: str, workflow_id: str = None) -> dict:
-    """Celery task for URLScan.io scanning."""
-    with URLScanProvider() as provider:
-        if workflow_id:
-            provider.set_workflow_id(workflow_id)
-
-        result = provider.scan_with_timing(target)
-
-        # Return serializable result
-        return {
-            "provider": result.provider,
-            "target": result.target,
-            "is_threat": result.is_threat,
-            "threat_level": result.threat_level.value,
-            "confidence": result.confidence,
-            "details": result.details,
-            "execution_time": result.execution_time,
-            "error_message": result.error_message,
-            "timestamp": result.timestamp.isoformat(),
-        }

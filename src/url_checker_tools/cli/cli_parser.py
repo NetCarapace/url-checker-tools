@@ -118,13 +118,6 @@ Examples:
             help="Enable MISP threat intelligence reporting (create new MISP events from scan results)",
         )
 
-        # Workflow options (new)
-        parser.add_argument(
-            "--workflow",
-            choices=["fast", "complete", "reputation"],
-            help="Use Celery workflow for distributed scanning",
-        )
-
         # Provider information
         parser.add_argument(
             "--list-providers",

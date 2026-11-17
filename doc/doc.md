@@ -99,7 +99,6 @@ The URL Checker now uses a clean inheritance-based architecture where all provid
 - **Error Handling**: Standardized error result creation and exception handling
 - **Configuration Management**: Automatic configuration loading from enums and keyring
 - **HTTP Client Integration**: Secure HTTP handling with rate limiting and SSL validation
-- **Celery Integration**: Optional async task processing via `CeleryProviderMixin`
 
 ### 3.2 Code Flow Architecture
 
@@ -186,15 +185,15 @@ The URL Checker now uses a clean inheritance-based architecture where all provid
 ├─────────────────────────────────────────────────────────────────────────────────┤
 │ • src/url_checker_tools.py                     - Main CLI orchestration and     │
 │                                                  control flow                   │
-│ • src/urlchecker/core/base_provider.py         - Provider inheritance base with │
+│ • src/url_checker_tools/core/base_provider.py         - Provider inheritance base with │
 │                                                  timing/logging                 │
-│ • src/urlchecker/providers/*.py                - Individual provider            │
+│ • src/url_checker_tools/providers/*.py                - Individual provider            │
 │                                                  implementations                │
-│ • src/urlchecker/config/logging_config.py      - WorkflowLogger for dual robot  │
+│ • src/url_checker_tools/config/logging_config.py      - WorkflowLogger for dual robot  │
 │                                                  logging                        │
-│ • src/urlchecker/integrations/misp_reporter.py - MISP event creation (optional) │
-│ • src/urlchecker/analysis/unified_scorer.py    - Threat score calculation       │
-│ • src/urlchecker/output/formatters.py          - Output format processing       │
+│ • src/url_checker_tools/integrations/misp_reporter.py - MISP event creation (optional) │
+│ • src/url_checker_tools/analysis/unified_scorer.py    - Threat score calculation       │
+│ • src/url_checker_tools/output/formatters.py          - Output format processing       │
 └─────────────────────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────────────────────┐│                              MISP INTEGRATION NOTES                             │
@@ -275,7 +274,7 @@ url_checker/
 │
 └── src/
     ├── url_checker_tools.py            # Main CLI application
-    └── urlchecker/
+    └── url_checker_tools/
         ├── __init__.py                 # Package interface
         │
         ├── config/                     # Configuration system
@@ -295,7 +294,6 @@ url_checker/
         │   ├── exceptions.py           # Exception hierarchy
         │   ├── utils.py                # Utility functions
         │   ├── key_manager.py          # API key management via keyring
-        │   └── celery_app.py           # Celery integration for async tasks
         │
         ├── providers/                  # Provider implementations
         │   ├── __init__.py             # Providers package

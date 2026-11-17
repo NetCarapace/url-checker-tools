@@ -44,7 +44,6 @@ def make_request(robot=False, file_scans=False):
         misp_report=False,
         auto_scan_files=file_scans,
         download=file_scans,
-        workflow=None,
     )
 
 
