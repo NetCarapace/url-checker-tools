@@ -51,10 +51,10 @@ dev = [
 
 
 [project.urls]
-Homepage = "https://git.restena.lu/RESTENA/csirt/services/ngsoti/url-checker-tools"
+Homepage = "https://github.com/NetCarapace/url-checker-tools"
 
 [project.scripts]
-url-checker = "url_checker_tools.cli:main"
+url-checker-tools = "url_checker_tools.cli:main"
 #run-tests = "pytest tests/"
 
 [build-system]

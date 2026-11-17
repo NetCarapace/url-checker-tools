@@ -134,9 +134,7 @@ class MISPReporter:
 
         return obj
 
-    def _build_link_analysis_object(
-        self, details: Dict[str, Any], verdict: str
-    ):
+    def _build_link_analysis_object(self, details: Dict[str, Any], verdict: str):
         """Object 4 — link analysis / redirect chain (annotation object)."""
 
         ips = details.get("resolved_ips", []) or []
@@ -189,7 +187,9 @@ class MISPReporter:
     def _build_threat_intel_object(self, threat_intel_summary: List[str]):
         """Object 6 — per-provider verdicts (annotation object)."""
 
-        lines = [f"- {seg}" for seg in threat_intel_summary if isinstance(seg, str) and seg]
+        lines = [
+            f"- {seg}" for seg in threat_intel_summary if isinstance(seg, str) and seg
+        ]
         text = "Threat Intel:\n" + ("\n".join(lines) if lines else "None")
 
         obj = MISPObject("annotation")
@@ -210,11 +210,17 @@ class MISPReporter:
     ):
         """Object 7 — overall assessment (annotation object)."""
 
-        verdict = "CRITICAL" if threat_score >= 70 else "SUSPICIOUS" if threat_score >= 40 else "CLEAN"
+        verdict = (
+            "CRITICAL"
+            if threat_score >= 70
+            else "SUSPICIOUS" if threat_score >= 40 else "CLEAN"
+        )
         breakdown = scoring_data.get("score_breakdown", {})
-        contributing = ", ".join(
-            f"{k}:{v}" for k, v in breakdown.items() if v
-        ) if isinstance(breakdown, dict) else ""
+        contributing = (
+            ", ".join(f"{k}:{v}" for k, v in breakdown.items() if v)
+            if isinstance(breakdown, dict)
+            else ""
+        )
 
         lines = [
             f"Verdict: {verdict}",
@@ -286,7 +292,11 @@ class MISPReporter:
 
             for result in results:
                 pname = getattr(result, "provider", "").lower()
-                det = result.details if isinstance(getattr(result, "details", None), dict) else {}
+                det = (
+                    result.details
+                    if isinstance(getattr(result, "details", None), dict)
+                    else {}
+                )
 
                 if result.is_error:
                     status = "Unavailable" if result.is_unavailable else "Error"
@@ -303,7 +313,9 @@ class MISPReporter:
                     link_analyzer_details = det
                     tl = getattr(result, "threat_level", None)
                     tl_val = getattr(tl, "value", "unknown") if tl else "unknown"
-                    link_analyzer_verdict = tl_val.capitalize() if isinstance(tl_val, str) else "Unknown"
+                    link_analyzer_verdict = (
+                        tl_val.capitalize() if isinstance(tl_val, str) else "Unknown"
+                    )
                     continue  # don't add to threat_intel_summary
 
                 if pname == "whois":
@@ -317,32 +329,55 @@ class MISPReporter:
                 tl = getattr(result, "threat_level", None)
                 tl_val = getattr(tl, "value", None)
                 verdict_map = {
-                    "malicious": "Malicious", "critical": "Critical",
-                    "suspicious": "Suspicious", "safe": "Safe",
-                    "unknown": "Unknown", "error": "Error",
+                    "malicious": "Malicious",
+                    "critical": "Critical",
+                    "suspicious": "Suspicious",
+                    "safe": "Safe",
+                    "unknown": "Unknown",
+                    "error": "Error",
                 }
                 base_verdict = verdict_map.get(tl_val, "Unknown")
 
                 if pname == "virustotal" and det:
                     mal = det.get("malicious_count", 0)
                     total = det.get("total_engines", 0)
-                    segment = f"VT: Malicious ({mal}/{total})" if mal else f"VT: Clean ({total} engines)"
+                    segment = (
+                        f"VT: Malicious ({mal}/{total})"
+                        if mal
+                        else f"VT: Clean ({total} engines)"
+                    )
                     cats = det.get("categories") or det.get("categories_vt") or []
                     if isinstance(cats, list) and cats:
-                        unique_cats = sorted({c.strip().lower() for c in cats if isinstance(c, str) and c})
+                        unique_cats = sorted(
+                            {
+                                c.strip().lower()
+                                for c in cats
+                                if isinstance(c, str) and c
+                            }
+                        )
                         if unique_cats:
                             segment += f" [Categories: {', '.join(unique_cats)}]"
                     threat_intel_summary.append(segment)
 
                 elif pname == "whalebone" and det:
                     max_acc = det.get("max_accuracy", det.get("accuracy", 0)) or 0
-                    threat_types = [t for t in (det.get("threat_types") or []) if isinstance(t, str)]
-                    tt_str = ", ".join(sorted(set(threat_types))) if threat_types else ""
+                    threat_types = [
+                        t for t in (det.get("threat_types") or []) if isinstance(t, str)
+                    ]
+                    tt_str = (
+                        ", ".join(sorted(set(threat_types))) if threat_types else ""
+                    )
                     cats = det.get("categories", []) or []
                     v = base_verdict
-                    base = f"WHALEBONE: {v} ({tt_str}; Max accuracy: {int(max_acc)}%)" if tt_str else f"WHALEBONE: {v} (Max accuracy: {int(max_acc)}%)"
+                    base = (
+                        f"WHALEBONE: {v} ({tt_str}; Max accuracy: {int(max_acc)}%)"
+                        if tt_str
+                        else f"WHALEBONE: {v} (Max accuracy: {int(max_acc)}%)"
+                    )
                     if cats:
-                        cats_str = ", ".join(sorted({c for c in cats if isinstance(c, str)}))
+                        cats_str = ", ".join(
+                            sorted({c for c in cats if isinstance(c, str)})
+                        )
                         threat_intel_summary.append(f"{base} [Categories: {cats_str}]")
                     else:
                         threat_intel_summary.append(base)
@@ -350,50 +385,70 @@ class MISPReporter:
                 elif pname == "google_sb" and result.is_threat:
                     sb_types = det.get("threat_types", [])
                     threat_intel_summary.append(
-                        f"GOOGLE_SB: Malicious ({', '.join(sb_types)})" if sb_types else "GOOGLE_SB: Malicious"
+                        f"GOOGLE_SB: Malicious ({', '.join(sb_types)})"
+                        if sb_types
+                        else "GOOGLE_SB: Malicious"
                     )
 
                 elif pname == "abuseipdb" and det:
-                    confidence = det.get("abuse_confidence", det.get("abuseConfidencePercentage", 0))
+                    confidence = det.get(
+                        "abuse_confidence", det.get("abuseConfidencePercentage", 0)
+                    )
                     if confidence:
-                        threat_intel_summary.append(f"ABUSEIPDB: {det.get('verdict', 'Suspicious')} (Confidence: {confidence}%)")
+                        threat_intel_summary.append(
+                            f"ABUSEIPDB: {det.get('verdict', 'Suspicious')} (Confidence: {confidence}%)"
+                        )
                     else:
                         threat_intel_summary.append(f"ABUSEIPDB: {base_verdict}")
 
                 elif pname == "yara":
                     matched = det.get("matched_rules", []) or []
                     if matched:
-                        threat_intel_summary.append(f"YARA: {base_verdict} (Rules: {', '.join(str(r) for r in matched[:5])})")
+                        threat_intel_summary.append(
+                            f"YARA: {base_verdict} (Rules: {', '.join(str(r) for r in matched[:5])})"
+                        )
                     else:
                         threat_intel_summary.append(f"YARA: {base_verdict}")
 
                 else:
-                    threat_intel_summary.append(f"{result.provider.upper()}: {base_verdict}")
+                    threat_intel_summary.append(
+                        f"{result.provider.upper()}: {base_verdict}"
+                    )
 
             # ---- Add MISPObjects to event --------------------------------
 
             # 1) URL object
-            self._add_object(event_id, self._build_url_object(target, threat_score), "url")
+            self._add_object(
+                event_id, self._build_url_object(target, threat_score), "url"
+            )
 
             # 2) domain-ip object (only if we have IPs)
             if dns_ips:
-                self._add_object(event_id, self._build_domain_ip_object(target, dns_ips), "domain-ip")
+                self._add_object(
+                    event_id, self._build_domain_ip_object(target, dns_ips), "domain-ip"
+                )
 
             # 3) WHOIS object
             if whois_details:
-                self._add_object(event_id, self._build_whois_object(whois_details), "whois")
+                self._add_object(
+                    event_id, self._build_whois_object(whois_details), "whois"
+                )
 
             # 4) Link analysis annotation
             if has_link_analyzer and link_analyzer_details:
                 self._add_object(
                     event_id,
-                    self._build_link_analysis_object(link_analyzer_details, link_analyzer_verdict),
+                    self._build_link_analysis_object(
+                        link_analyzer_details, link_analyzer_verdict
+                    ),
                     "link-analysis annotation",
                 )
 
             # 5) YARA annotation
             if has_yara:
-                self._add_object(event_id, self._build_yara_object(yara_details), "yara annotation")
+                self._add_object(
+                    event_id, self._build_yara_object(yara_details), "yara annotation"
+                )
 
             # 6) Threat intel annotation
             if threat_intel_summary:
@@ -407,8 +462,13 @@ class MISPReporter:
             self._add_object(
                 event_id,
                 self._build_assessment_object(
-                    threat_count, total_providers, clean_providers,
-                    threat_score, session_id, scoring_data, not_run,
+                    threat_count,
+                    total_providers,
+                    clean_providers,
+                    threat_score,
+                    session_id,
+                    scoring_data,
+                    not_run,
                 ),
                 "assessment annotation",
             )
@@ -443,7 +503,9 @@ class MISPReporter:
         try:
             result = self._misp_client.add_object(event_id, misp_obj)
             if isinstance(result, dict) and "errors" in result:
-                self._logger.warning(f"MISP object '{label}' returned errors: {result['errors']}")
+                self._logger.warning(
+                    f"MISP object '{label}' returned errors: {result['errors']}"
+                )
             elif not result:
                 self._logger.warning(f"MISP object '{label}' returned empty response")
         except Exception as e:

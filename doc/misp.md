@@ -11,7 +11,7 @@ This document describes how to set up and use MISP (Malware Information Sharing 
 2. **API Key Setup**
    ```bash
    # Store your MISP API key in the system keyring
-   python -c "import keyring; keyring.set_password('urlchecker', 'misp', 'YOUR_API_KEY_HERE')"
+   python -c "import keyring; keyring.set_password('url_checker_tools', 'misp', 'YOUR_API_KEY_HERE')"
 
    # Or use the keys.py tool:
    python tools/manage_keys.py add --account misp
@@ -23,7 +23,7 @@ This document describes how to set up and use MISP (Malware Information Sharing 
 ### Basic MISP Reporting
 ```bash
 # Create a MISP event when at least one provider detects a threat
-uv run url-checker https://suspicious-site.com --misp-report --robot --sid test_001
+uv run url-checker-tools https://suspicious-site.com --misp-report --robot --sid test_001
 ```
 
 Note: argparse accepts unambiguous prefixes, so `--misp` is the same as `--misp-report` and also creates events.
@@ -31,7 +31,7 @@ Note: argparse accepts unambiguous prefixes, so `--misp` is the same as `--misp-
 ### Robot Mode with MISP (Recommended for Automation)
 ```bash
 # Automated scanning with MISP reporting
-uv run url-checker https://target.com --robot --misp-report --sid automation_001
+uv run url-checker-tools https://target.com --robot --misp-report --sid automation_001
 ```
 
 ### Configuration Options
@@ -173,8 +173,8 @@ Log in at `https://localhost:8443` with the default credentials:
 
 You will be prompted to change the password on first login.
 
-Retrieve your automation API key at:  
-**Administration → My Profile → Auth keys**  
+Retrieve your automation API key at:
+**Administration → My Profile → Auth keys**
 (or directly at `https://localhost:8443/auth_keys/index`)
 
 ### Configure the dev environment

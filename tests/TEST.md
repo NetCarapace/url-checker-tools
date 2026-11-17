@@ -10,7 +10,7 @@ and catch regressions when developers make changes.
 
 ```bash
 # Run complete test suite with coverage
-pytest tests/ --cov=src/urlchecker -v
+pytest tests/ --cov=src/url_checker_tools -v
 ```
 ```bash
 # Run with parallel processing for speed
@@ -45,7 +45,7 @@ pytest -m network -v                 # Network-dependent tests (requires interne
 
 ```bash
 # Run complete test suite with coverage
-pytest . --cov=../src/urlchecker -v
+pytest . --cov=../src/url_checker_tools -v
 ```
 ```bash
 # Run with parallel processing for speed
@@ -99,7 +99,7 @@ The architecture emphasizes:
 - From tests/: `pytest test_provider_discovery.py -v`
 
 **Key Features**:
-- **Automated Discovery**: Discovers all `*.py` files in `src/urlchecker/providers/`
+- **Automated Discovery**: Discovers all `*.py` files in `src/url_checker_tools/providers/`
 - **Inheritance Validation**: Validates each provider properly inherits from `BaseProvider`
 - **Method Implementation**: Checks implementation of required methods (`scan`, `is_available`)
 - **Signature Validation**: Verifies method signatures match expected patterns
@@ -583,7 +583,7 @@ pytest tests/test_security_robustness.py -v
 ### CI/CD Pipeline Commands
 ```bash
 # Complete test suite with coverage for CI/CD
-pytest tests/ --cov=src/urlchecker --cov-report=xml --cov-report=term --junitxml=pytest-results.xml -v
+pytest tests/ --cov=src/url_checker_tools --cov-report=xml --cov-report=term --junitxml=pytest-results.xml -v
 ```
 ```bash
 # Fast smoke test for pull requests
@@ -605,7 +605,7 @@ pytest tests/test_provider_discovery.py tests/test_base_provider_functionality.p
 ```
 ```bash
 # Full validation for major changes
-pytest tests/ --cov=src/urlchecker --cov-fail-under=90 -v
+pytest tests/ --cov=src/url_checker_tools --cov-fail-under=90 -v
 ```
 
 ## Test Maintenance and Updates
@@ -631,15 +631,15 @@ No test updates required - discovery system handles new providers automatically.
 ### Test Coverage Monitoring
 ```bash
 # Generate detailed coverage report
-pytest tests/ --cov=src/urlchecker --cov-report=html
+pytest tests/ --cov=src/url_checker_tools --cov-report=html
 ```
 ```bash
 # Check coverage with failure on low coverage
-pytest tests/ --cov=src/urlchecker --cov-fail-under=95
+pytest tests/ --cov=src/url_checker_tools --cov-fail-under=95
 ```
 ```bash
 # Branch coverage for thorough validation
-pytest tests/ --cov=src/urlchecker --cov-branch --cov-report=term-missing
+pytest tests/ --cov=src/url_checker_tools --cov-branch --cov-report=term-missing
 ```
 
 ## Debugging Failed Tests
@@ -734,7 +734,7 @@ In addition to the comprehensive test suite, one legacy test file provides suppl
 ### Run All Tests
 ```bash
 # Complete test suite with coverage
-pytest tests/ --cov=src/urlchecker -v
+pytest tests/ --cov=src/url_checker_tools -v
 ```
 ```bash
 # Comprehensive test suite only (9 files)

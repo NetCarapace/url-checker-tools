@@ -11,7 +11,7 @@ The URL Checker uses a pluggable provider architecture that makes adding new thr
 ### 1. Copy the Template
 
 ```bash
-cp src/urlchecker/providers/_template.py src/urlchecker/providers/your_provider.py
+cp src/url_checker_tools/providers/_template.py src/url_checker_tools/providers/your_provider.py
 ```
 
 ### 2. Replace Placeholders
@@ -25,7 +25,7 @@ Edit the new file and replace all `[TEMPLATE]` and `[template]` placeholders wit
 
 ### 3. Add Provider Type
 
-Add your provider to the `ProviderType` enum in `src/urlchecker/threat_result.py`:
+Add your provider to the `ProviderType` enum in `src/url_checker_tools/threat_result.py`:
 
 ```python
 class ProviderType(Enum):
@@ -35,7 +35,7 @@ class ProviderType(Enum):
 
 ### 4. Register Provider
 
-Add import to `src/urlchecker/providers/registry.py` in the `auto_discover_providers()` method:
+Add import to `src/url_checker_tools/providers/registry.py` in the `auto_discover_providers()` method:
 
 ```python
 provider_modules = [
