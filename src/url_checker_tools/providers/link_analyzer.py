@@ -14,7 +14,6 @@ from urllib.parse import urlparse
 import requests
 
 from url_checker_tools.core.base_provider import BaseProvider
-from url_checker_tools.core.celery_app import celery_app
 from url_checker_tools.core.results import ProviderResult, ThreatLevel
 
 
@@ -137,26 +136,3 @@ class LinkAnalyzerProvider(BaseProvider):
 
         except Exception as e:
             return self._create_error_result(target, f"link analysis error: {e}")
-
-
-# Celery task
-@celery_app.task(name="link_analyzer_scan")
-def link_analyzer_scan(target: str, workflow_id: str = None) -> dict:
-    """Celery task for Link Analyzer scanning."""
-    with LinkAnalyzerProvider() as provider:
-        if workflow_id:
-            provider.set_workflow_id(workflow_id)
-
-        result = provider.scan_with_timing(target)
-
-        return {
-            "provider": result.provider,
-            "target": result.target,
-            "is_threat": result.is_threat,
-            "threat_level": result.threat_level.value,
-            "confidence": result.confidence,
-            "details": result.details,
-            "execution_time": result.execution_time,
-            "error_message": result.error_message,
-            "timestamp": result.timestamp.isoformat(),
-        }

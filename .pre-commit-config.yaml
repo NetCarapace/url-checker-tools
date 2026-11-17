@@ -23,7 +23,7 @@ repos:
 
 # flake8 linter preconfigured for compatibility with Black
   - repo: https://github.com/pycqa/flake8
-    rev: 7.3.0
+    rev: 7.5.0
     hooks:
       - id: flake8
         files: ^src/
@@ -35,7 +35,7 @@ repos:
 
 # The standard Black formatter
   - repo: https://github.com/psf/black
-    rev: 26.3.1
+    rev: 26.10.1
     hooks:
       - id: black
         language_version: python3.13
@@ -44,7 +44,7 @@ repos:
 
 # Automatically sort and formats Python imports
   - repo: https://github.com/pycqa/isort
-    rev: 9.0.0a3
+    rev: 10.0.0b3
     hooks:
       - id: isort
         language_version: python3.13
@@ -59,7 +59,7 @@ repos:
 # Automatically remove unused imports
 # in-lieu-and-place of flake8
   - repo: https://github.com/hadialqattan/pycln
-    rev: 'v2.6.0'
+    rev: 'v2.6.1'
     hooks:
       - id: pycln
         language_version: python3.13
@@ -82,9 +82,9 @@ repos:
 ##          entry: poetry run coverage run -m pytest
 
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.11.9
+    rev: 0.13.8
     hooks:
       - id: uv-lock
         language_version: python3.13
 
-exclude: "src/urlchecker/providers/_template.py|tests/.*"
+exclude: "src/url_checker_tools/providers/_template.py|tests/.*"

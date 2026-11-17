@@ -18,9 +18,7 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-    "celery[redis]>=5.3.4",
     "keyring>=25",
-    #"misp-modules",
     "pydantic>=2.0.0",
     "pydantic-settings>=2.0.0",
     "pylookyloo>=1.31",
@@ -28,14 +26,13 @@ dependencies = [
     "pypandora>=1.9",
     "pysafebrowsing>=0.1",
     "python-dotenv>=1.1",
-    "redis>=5",
     "requests>=2",
     "vt-py>=0.21.0",
     "whois>=1.20240129.2",
     "yara-x>=1.5.0",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "build",
     "black",
@@ -54,10 +51,10 @@ dev = [
 
 
 [project.urls]
-Homepage = "https://git.restena.lu/RESTENA/csirt/services/ngsoti/url-checker-tools"
+Homepage = "https://github.com/NetCarapace/url-checker-tools"
 
 [project.scripts]
-url-checker = "url_checker_tools:main"
+url-checker-tools = "url_checker_tools.cli:main"
 #run-tests = "pytest tests/"
 
 [build-system]
@@ -82,7 +79,7 @@ version = "1.0.0"
 commit = true
 tag = true
 
-[tool.bumpversion.file."src/urlchecker/__init__.py"]
+[tool.bumpversion.file."src/url_checker_tools/__init__.py"]
 search = '__version__ = "{current_version}"'
 replace = '__version__ = "{new_version}"'
 
@@ -112,12 +109,12 @@ use_parentheses = true
 ensure_newline_before_comments = true
 line_length = 88
 
-# Optional integrations
-#integrations = [
-#    "pymisp==2.5.10",
-#]
-
 [tool.pytest.ini_options]
+filterwarnings = [
+    "error",
+    "ignore::UserWarning",
+    "ignore::DeprecationWarning"
+]
 markers = [
     "unit: unit tests that validate small, isolated functionality",
     "integration: integration tests that exercise multiple components together",

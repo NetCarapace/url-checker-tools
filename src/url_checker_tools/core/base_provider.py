@@ -195,34 +195,3 @@ class BaseProvider(ABC):
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit."""
         self.close()
-
-
-class CeleryProviderMixin:
-    """Mixin to add Celery task functionality to providers."""
-
-    def make_celery_task(self, celery_app):
-        """Convert the scan method to a Celery task."""
-
-        @celery_app.task(bind=True, name=f"{self.provider_name}_scan")
-        def celery_scan(task_self, target: str, workflow_id: Optional[str] = None):
-            # Set workflow ID for logging
-            if workflow_id:
-                self.set_workflow_id(workflow_id)
-
-            # Perform scan
-            result = self.scan_with_timing(target)
-
-            # Return serializable result
-            return {
-                "provider": result.provider,
-                "target": result.target,
-                "is_threat": result.is_threat,
-                "threat_level": result.threat_level.value,
-                "confidence": result.confidence,
-                "details": result.details,
-                "execution_time": result.execution_time,
-                "error_message": result.error_message,
-                "timestamp": result.timestamp.isoformat(),
-            }
-
-        return celery_scan

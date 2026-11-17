@@ -4,7 +4,7 @@
 import json
 from abc import ABC, abstractmethod
 
-from url_checker_tools.core.results import ProviderResult, ThreatLevel, WorkflowResult
+from url_checker_tools.core.results import ProviderResult, ThreatLevel
 
 
 class BaseFormatter(ABC):
@@ -13,11 +13,6 @@ class BaseFormatter(ABC):
     @abstractmethod
     def format_provider_result(self, result: ProviderResult) -> str:
         """Format a single provider result."""
-        pass
-
-    @abstractmethod
-    def format_workflow_result(self, result: WorkflowResult) -> str:
-        """Format a complete workflow result."""
         pass
 
 
@@ -41,36 +36,6 @@ class TerminalFormatter(BaseFormatter):
             output += f" [{result.execution_time:.2f}s]"
 
         return output
-
-    def format_workflow_result(self, result: WorkflowResult) -> str:
-        """Format workflow result for terminal display."""
-        lines = []
-
-        # Header
-        lines.append("=" * 60)
-        lines.append(f"URL SCAN RESULTS: {result.target}")
-        lines.append(f"Workflow ID: {result.workflow_id}")
-        lines.append("=" * 60)
-
-        # Individual results
-        for provider_result in result.results:
-            lines.append(self.format_provider_result(provider_result))
-
-        # Summary
-        lines.append("-" * 60)
-        lines.append(f"FINAL ASSESSMENT: {result.final_assessment.value.upper()}")
-        lines.append(f"RECOMMENDATION: {result.recommendation.value.upper()}")
-        lines.append(f"CONFIDENCE: {result.confidence_score:.1%}")
-        lines.append(
-            f"PROVIDERS: {result.provider_count} | ERRORS: {result.error_count}"
-        )
-
-        if result.total_execution_time:
-            lines.append(f"TOTAL TIME: {result.total_execution_time:.2f}s")
-
-        lines.append("=" * 60)
-
-        return "\n".join(lines)
 
     def _get_status_icon(self, threat_level: ThreatLevel) -> str:
         """Get icon for threat level."""
@@ -105,10 +70,6 @@ class JSONFormatter(BaseFormatter):
             indent=2,
         )
 
-    def format_workflow_result(self, result: WorkflowResult) -> str:
-        """Format workflow result as JSON."""
-        return json.dumps(result.to_dict(), indent=2)
-
 
 class CompactFormatter(BaseFormatter):
     """Compact one-line formatter for logging."""
@@ -118,16 +79,6 @@ class CompactFormatter(BaseFormatter):
         status = "ERROR" if result.is_error else result.threat_level.value.upper()
         return (
             f"[{result.provider}] {result.target} -> {status} ({result.confidence:.1%})"
-        )
-
-    def format_workflow_result(self, result: WorkflowResult) -> str:
-        """Format workflow result in compact format."""
-        return (
-            f"[WORKFLOW] {result.workflow_id[:8]} | {result.target} -> "
-            f"{result.final_assessment.value.upper()} | "
-            f"{result.recommendation.value} | "
-            f"{result.provider_count} providers | "
-            f"{result.confidence_score:.1%} confidence"
         )
 
 
@@ -145,10 +96,6 @@ class SynthesisFormatter(BaseFormatter):
             },
             indent=2,
         )
-
-    def format_workflow_result(self, result: WorkflowResult) -> str:
-        """Format workflow result as synthesis."""
-        return json.dumps(result.to_dict(), indent=2)
 
 
 def get_formatter(format_type: str = "human") -> BaseFormatter:

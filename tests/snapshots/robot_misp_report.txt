@@ -1,0 +1,260 @@
+exit: 0
+--- stdout ---
+SID: snap
+[SCAN] Checking: whois, misp, link_analyzer, whalebone, virustotal, yara, abuseipdb
+RESULT: SAFE (18/100)
+MISP event created: 42
+[INFO] Robot logs created:
+  Synthesis: data/logs/sessions/d894cfd0d73f0ed4dae63393caa72d9f6322c1a89aa66fd083bc90e87071dfd6/<date>/snap.log
+  Detailed: data/logs/sessions/d894cfd0d73f0ed4dae63393caa72d9f6322c1a89aa66fd083bc90e87071dfd6/<date>/snap.dlog
+
+--- stderr ---
+ERROR: {"timestamp": "<ts>", "event_type": "error", "session_id": "snap", "provider": "abuseipdb", "target": "http://example.test/login", "error": "abuseipdb scan failed: connection refused", "context": {}}
+
+--- snap.dlog ---
+{
+  "session_metadata": {
+    "session_id": "snap",
+    "timestamp": "<ts>",
+    "target_info": {
+      "original": "http://example.test/login",
+      "normalized": "http://example.test/login",
+      "type": "url",
+      "hash": "d894cfd0d73f0ed4dae63393caa72d9f6322c1a89aa66fd083bc90e87071dfd6",
+      "scheme": "http",
+      "domain": "example.test",
+      "path": "/login",
+      "query": "",
+      "resolved_ips": [
+        "192.0.2.10",
+        "2001:db8::10"
+      ],
+      "dns_resolution": {
+        "ipv4_addresses": [
+          "192.0.2.10"
+        ],
+        "ipv6_addresses": [
+          "2001:db8::10"
+        ],
+        "resolution_timestamp": "<ts>",
+        "total_ips": 2
+      },
+      "url_change": "No"
+    },
+    "misp_event": {
+      "event_id": "42",
+      "status": "success",
+      "error": null,
+      "uuid": "00000000-0000-0000-0000-000000000042"
+    }
+  },
+  "results": {
+    "target": "http://example.test/login",
+    "scan_timestamp": "<ts>",
+    "provider_results": [
+      {
+        "provider": "whois",
+        "status": "clean",
+        "threat_detected": false,
+        "threat_type": "safe",
+        "confidence": "0.90",
+        "tags": [],
+        "error_message": null,
+        "raw_response": {
+          "domain_name": "example.test",
+          "registrar": "Example Registrar",
+          "domain_age_days": 9000
+        }
+      },
+      {
+        "provider": "misp",
+        "status": "clean",
+        "threat_detected": false,
+        "threat_type": "safe",
+        "confidence": "0.90",
+        "tags": [],
+        "error_message": null,
+        "raw_response": {
+          "events_found": 0
+        }
+      },
+      {
+        "provider": "link_analyzer",
+        "status": "clean",
+        "threat_detected": false,
+        "threat_type": "safe",
+        "confidence": "0.90",
+        "tags": [],
+        "error_message": null,
+        "raw_response": {
+          "redirect_count": 1,
+          "final_url": "https://example.test/login",
+          "domain_changed": false,
+          "resolved_ips": [
+            "192.0.2.10",
+            "2001:db8::10"
+          ]
+        }
+      },
+      {
+        "provider": "whalebone",
+        "status": "clean",
+        "threat_detected": false,
+        "threat_type": "safe",
+        "confidence": "0.90",
+        "tags": [],
+        "error_message": null,
+        "raw_response": {
+          "threat_types": [],
+          "categories": [
+            "news"
+          ],
+          "max_accuracy": 0
+        }
+      },
+      {
+        "provider": "virustotal",
+        "status": "threat",
+        "threat_detected": true,
+        "threat_type": "malicious",
+        "confidence": "0.80",
+        "tags": [],
+        "error_message": null,
+        "raw_response": {
+          "malicious_count": 5,
+          "total_engines": 90,
+          "categories": [
+            "phishing",
+            "Phishing"
+          ]
+        }
+      },
+      {
+        "provider": "google_sb",
+        "status": "unavailable",
+        "threat_detected": false,
+        "threat_type": "error",
+        "confidence": "0.00",
+        "tags": [],
+        "error_message": "google_sb not available",
+        "raw_response": {
+          "status": "unavailable",
+          "reason": "provider not configured"
+        }
+      },
+      {
+        "provider": "yara",
+        "status": "clean",
+        "threat_detected": false,
+        "threat_type": "safe",
+        "confidence": "0.90",
+        "tags": [],
+        "error_message": null,
+        "raw_response": {
+          "scan_summary": "No pattern matches",
+          "matches": []
+        }
+      },
+      {
+        "provider": "abuseipdb",
+        "status": "error",
+        "threat_detected": false,
+        "threat_type": "error",
+        "confidence": "0.00",
+        "tags": [],
+        "error_message": "abuseipdb scan failed: connection refused",
+        "raw_response": {
+          "status": "error",
+          "message": "connection refused"
+        }
+      }
+    ]
+  }
+}
+--- snap.log ---
+{
+  "session_metadata": {
+    "session_id": "snap",
+    "timestamp": "<ts>",
+    "target_info": {
+      "original": "http://example.test/login",
+      "normalized": "http://example.test/login",
+      "type": "url",
+      "hash": "d894cfd0d73f0ed4dae63393caa72d9f6322c1a89aa66fd083bc90e87071dfd6",
+      "scheme": "http",
+      "domain": "example.test",
+      "path": "/login",
+      "query": "",
+      "resolved_ips": [
+        "192.0.2.10",
+        "2001:db8::10"
+      ],
+      "dns_resolution": {
+        "ipv4_addresses": [
+          "192.0.2.10"
+        ],
+        "ipv6_addresses": [
+          "2001:db8::10"
+        ],
+        "resolution_timestamp": "<ts>",
+        "total_ips": 2
+      },
+      "url_change": "No"
+    },
+    "misp_event": {
+      "event_id": "42",
+      "status": "success",
+      "error": null,
+      "uuid": "00000000-0000-0000-0000-000000000042"
+    }
+  },
+  "synthesis": {
+    "whois": {
+      "is_active": true,
+      "age": 9000,
+      "domain": "example.test",
+      "status": "active"
+    },
+    "providers": {
+      "whois": "Age: 9000 days; Registrar: Example Registrar",
+      "misp": "Clean",
+      "link_analyzer": "Safe | 1 redirect(s)",
+      "whalebone": "Clean | Categories: news",
+      "virustotal": "Malicious (5/90) | Categories: phishing",
+      "google_sb": "Unavailable",
+      "yara": "No pattern matches",
+      "abuseipdb": "Error"
+    },
+    "metadata_analysis": {
+      "behavioral_anomalies": [],
+      "risk_indicators": [],
+      "confidence_score": 0.7,
+      "cross_validation_status": "medium_consistency"
+    },
+    "link_analysis": {
+      "redirects": 1,
+      "domain_change": false,
+      "is_blocked": false,
+      "final_url": "https://example.test/login",
+      "dns_resolved": true,
+      "security_downgrades": 0,
+      "contains_shorteners": false,
+      "suspicious_patterns": []
+    },
+    "yara": {
+      "type": "clean",
+      "redirects": 0,
+      "url_shorteners": 0,
+      "domain_change": null,
+      "security_downgrades": 0,
+      "download_links": 0,
+      "flags": []
+    },
+    "result": {
+      "verdict": "SAFE",
+      "threat_score": 18,
+      "metadata_confidence": 0.7,
+      "cross_validation_status": "medium_consistency"
+    }
+  }
+}

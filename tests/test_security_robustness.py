@@ -157,7 +157,7 @@ class TestSecurityRobustness:
 
         for error_type in error_types:
             try:
-                with patch('urlchecker.config.providers_enum.ProviderConfigTemplate.get_all_provider_configs'):
+                with patch('url_checker_tools.config.provider_config.ProviderConfigTemplate.get_all_provider_configs'):
                     provider = ErrorProneProvider(error_type)
 
                     if error_type == "availability_error":
@@ -407,7 +407,7 @@ class TestSecurityRobustness:
                     # Force an error that might expose sensitive data
                     raise Exception(f"Database connection failed: {self.config.database_url}")
 
-            with patch('urlchecker.config.providers_enum.ProviderConfigTemplate.get_all_provider_configs'):
+            with patch('url_checker_tools.config.provider_config.ProviderConfigTemplate.get_all_provider_configs'):
                 provider = SensitiveErrorProvider()
 
                 with pytest.raises(Exception) as exc_info:

@@ -1,0 +1,21 @@
+exit: 0
+--- stdout ---
+Available providers:
+==================================================
+  whois        - [AVAILABLE] (built-in functionality)
+  link_analyzer - [AVAILABLE]
+  misp         - [AVAILABLE] (API key configured)
+  whalebone    - [AVAILABLE] (API key configured)
+  virustotal   - [AVAILABLE] (API key configured)
+  yara         - [AVAILABLE]
+  google_sb    -  Not configured (missing API key)
+  abuseipdb    - [AVAILABLE] (API key configured)
+
+Summary: 7/8 providers available
+
+Configuration tips:
+  - API keys can be set via keyring or environment variables
+  - Use 'python tools/manage_keys.py add --account <account>' for secure storage (account names: see --providers-status)
+  - YARA provider needs rules in 'rules/' directory or use --yara-rules flag
+
+--- stderr ---

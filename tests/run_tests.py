@@ -403,7 +403,7 @@ class TestRunner:
                 sys.executable,
                 "-m",
                 "pytest",
-                "--cov=../src/urlchecker",
+                "--cov=../src/url_checker_tools",
                 "--cov-report=html",
                 "--cov-report=term",
                 str(Path(__file__).parent),

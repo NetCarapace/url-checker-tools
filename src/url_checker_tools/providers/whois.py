@@ -6,7 +6,6 @@ import subprocess
 from typing import Dict
 
 from url_checker_tools.core.base_provider import BaseProvider
-from url_checker_tools.core.celery_app import celery_app
 from url_checker_tools.core.results import ProviderResult, ThreatLevel
 
 
@@ -154,27 +153,3 @@ class WhoisProvider(BaseProvider):
         }
 
         return self._create_safe_result(target, details, confidence=0.8)
-
-
-# Create Celery task
-@celery_app.task(name="whois_scan")
-def whois_scan(target: str, workflow_id: str = None) -> dict:
-    """Celery task for WHOIS scanning."""
-    with WhoisProvider() as provider:
-        if workflow_id:
-            provider.set_workflow_id(workflow_id)
-
-        result = provider.scan_with_timing(target)
-
-        # Return serializable result
-        return {
-            "provider": result.provider,
-            "target": result.target,
-            "is_threat": result.is_threat,
-            "threat_level": result.threat_level.value,
-            "confidence": result.confidence,
-            "details": result.details,
-            "execution_time": result.execution_time,
-            "error_message": result.error_message,
-            "timestamp": result.timestamp.isoformat(),
-        }

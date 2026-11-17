@@ -262,20 +262,14 @@ class WorkflowLogger:
         synthesis_path, _ = self._create_log_path(target, self.session_id)
         synthesis_path.parent.mkdir(parents=True, exist_ok=True)
 
-        try:
-            with open(synthesis_path, "w", encoding="utf-8") as f:
-                f.write(synthesis_json)
-        except Exception as e:
-            print(f"Warning: Failed to write synthesis log file: {e}")
+        with open(synthesis_path, "w", encoding="utf-8") as f:
+            f.write(synthesis_json)
 
         # Create detailed log (.dlog) in same directory
         detailed_path = synthesis_path.with_suffix(".dlog")
 
-        try:
-            with open(detailed_path, "w", encoding="utf-8") as f:
-                f.write(detailed_json)
-        except Exception as e:
-            print(f"Warning: Failed to write detailed log file: {e}")
+        with open(detailed_path, "w", encoding="utf-8") as f:
+            f.write(detailed_json)
 
         return synthesis_path, detailed_path
 
@@ -349,11 +343,8 @@ class WorkflowLogger:
             log_lines.append("}")
             log_content = "\n".join(log_lines)
 
-        try:
-            with open(log_path, "w", encoding="utf-8") as f:
-                f.write(log_content)
-        except Exception as e:
-            print(f"Warning: Failed to write session log file: {e}")
+        with open(log_path, "w", encoding="utf-8") as f:
+            f.write(log_content)
 
         return log_path
 
